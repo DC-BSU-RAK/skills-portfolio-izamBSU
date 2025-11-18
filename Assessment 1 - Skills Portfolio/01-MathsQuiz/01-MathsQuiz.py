@@ -7,7 +7,7 @@ import time
 import platform
 
 
-# --- Configuration ---
+#--- Configuration ---
 DIFFICULTY = {
     "Easy": (1, 9),
     "Moderate": (10, 99),
@@ -24,7 +24,7 @@ ACHIEVEMENTS_DEF = [
     {"id": "comeback", "title": "Comeback", "desc": "Get >=50% after initially falling below 30%"}
 ]
 
-# --- Utilities for storage ---
+#--- Utilities for storage ---
 def load_json_file(path, default):
     try:
         if not os.path.exists(path):
@@ -41,11 +41,11 @@ def save_json_file(path, data):
     except Exception as e:
         print(f"Failed saving {path}: {e}")
 
-# --- Leaderboard and profiles ---
+#--- Leaderboard and profiles ---
 leaderboard = load_json_file(LEADERBOARD_FILE, [])
 profiles = load_json_file(PROFILES_FILE, {})  # dict: username -> profile data
 
-# --- Sound helpers (safe) ---
+#--- Sound helpers (safe) ---
 def _bell_if_possible():
     try:
         root = tk._get_default_root()
@@ -78,7 +78,7 @@ else:
     def play_sound_wrong():
         _bell_if_possible()
 
-# --- App class ---
+#--- App class ---
 class EnhancedMathsQuizApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -86,19 +86,19 @@ class EnhancedMathsQuizApp(tk.Tk):
         self.geometry('900x600')
         self.minsize(800, 520)
 
-        # -------------------------
-        # --- Theme / Styling -----
-        # -------------------------
-        # Modern Dark Blue Professional Theme (Option 1)
+        #-------------------------
+        #--- Theme / Styling -----
+        #-------------------------
+        #Modern Dark Blue Professional Theme (Option 1)
         self._THEME = {}
-        PRIMARY_BG = "#0b1220"     # Deep background
-        MAIN_BG = "#071025"        # Main area backdrop
-        SIDEBAR_BG = "#0f1724"     # Sidebar deep slate
-        CARD_BG = "#0f172a"        # card-like panels
-        TEXT_LIGHT = "#e6eef8"     # light text
-        ACCENT = "#2b8ef6"         # professional blue
-        ACCENT_HOVER = "#60a5fa"   # lighter hover blue
-        ENTRY_BG = "#071829"       # input backgrounds
+        PRIMARY_BG = "#0b1220"     #Deep background
+        MAIN_BG = "#071025"        #Main area backdrop
+        SIDEBAR_BG = "#0f1724"     #Sidebar deep slate
+        CARD_BG = "#0f172a"        #card-like panels
+        TEXT_LIGHT = "#e6eef8"     #light text
+        ACCENT = "#2b8ef6"         #professional blue
+        ACCENT_HOVER = "#60a5fa"   #lighter hover blue
+        ENTRY_BG = "#071829"       #input backgrounds
         MUTED = "#93a4b8"
 
         self._THEME.update({
@@ -113,7 +113,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             "MUTED": MUTED
         })
 
-        # ttk style for themed widgets
+        #ttk style for themed widgets
         try:
             style = ttk.Style(self)
             # prefer clam for customizability
@@ -145,18 +145,17 @@ class EnhancedMathsQuizApp(tk.Tk):
                             foreground="white",
                             font=("Segoe UI", 10, "bold"))
         except Exception:
-            # If any style operation fails, continue silently (keeps logic intact)
+            
             pass
 
-        # Root-level defaults for classic widgets (tk.Button, tk.Label, etc.)
+        #Root-level defaults for classic widgets (tk.Button, tk.Label, etc.)
         try:
-            # Many widgets set their own bg explicitly; option_add helps default the rest
+            #Many widgets set their own bg explicitly; option_add helps default the rest
             self.option_add("*Background", MAIN_BG)
             self.option_add("*Foreground", TEXT_LIGHT)
             self.option_add("*Label.Font", ("Segoe UI", 11))
             self.option_add("*Button.Font", ("Segoe UI", 10))
             self.option_add("*Entry.Font", ("Segoe UI", 11))
-            # Button backgrounds via option_add (some platforms ignore this)
             self.option_add("*Button.Background", ACCENT)
             self.option_add("*Button.Foreground", TEXT_LIGHT)
             self.option_add("*TearOff", False)
@@ -164,7 +163,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             pass
 
         # -------------------------
-        # state
+        #state
         # -------------------------
         self.current_profile = None
         self.score = 0
@@ -176,33 +175,32 @@ class EnhancedMathsQuizApp(tk.Tk):
         self.timer_remaining = 0
         self.timer_after_id = None
         self.quiz_start_time = None
-        self.questions_attempted = []  # (qstr, user_ans, correct, correct_bool, time_taken)
+        self.questions_attempted = []  #(qstr, user_ans, correct, correct_bool, time_taken)
 
-        # theme state
+        #theme state
         self.dark_mode = True
         self.bg_image = None
 
-        # UI layout
+        #UI layout
         self.sidebar = tk.Frame(self, width=200, bg=SIDEBAR_BG)
         self.sidebar.pack(side='left', fill='y')
         self.main_area = tk.Frame(self, bg=MAIN_BG)
         self.main_area.pack(side='right', fill='both', expand=True)
 
-        # build UI
+        #build UI
         self._build_sidebar()
         self._build_main_frames()
 
-        # apply recursive theming to widgets created so far
         try:
             self._apply_theme_recursive(self)
         except Exception:
-            # silent fallback — don't break behavior if theming hits an issue
+            
             pass
 
-        # start on home
+        #start on home
         self.show_frame('home')
 
-    # Helper: recursively apply theme to existing widgets (safe visual tweaks only)
+    
     def _apply_theme_recursive(self, w):
         """
         Walks the widget tree and tweaks visual attributes for a consistent theme.
@@ -212,65 +210,65 @@ class EnhancedMathsQuizApp(tk.Tk):
         for child in w.winfo_children():
             try:
                 cls = child.winfo_class()
-                # Frames
+                #Frames
                 if isinstance(child, tk.Frame):
-                    # keep sidebar distinct
+            
                     if child is self.sidebar:
                         child.config(bg=t["SIDEBAR_BG"])
                     elif child is self.main_area:
                         child.config(bg=t["MAIN_BG"])
                     else:
-                        # card-like panels: if background currently bright, convert to card bg
+                        #card-like panels: if background currently bright, convert to card bg
                         try:
                             child.config(bg=t["CARD_BG"])
                         except Exception:
                             pass
-                # Labels
+                #Labels
                 if isinstance(child, tk.Label):
                     try:
                         child.config(bg=t["MAIN_BG"], fg=t["TEXT_LIGHT"])
                     except Exception:
                         pass
-                # Buttons (tk.Button)
+                #Buttons (tk.Button)
                 if isinstance(child, tk.Button):
                     try:
                         child.config(bg=t["ACCENT"], fg=t["TEXT_LIGHT"], activebackground=t["ACCENT_HOVER"],
                                      relief='flat', bd=0, highlightthickness=0)
-                        # hover
+                        #hover
                         child.bind("<Enter>", lambda e, c=t["ACCENT_HOVER"]: e.widget.config(bg=c))
                         child.bind("<Leave>", lambda e, c=t["ACCENT"]: e.widget.config(bg=c))
                     except Exception:
                         pass
-                # Entries
+                #Entries
                 if isinstance(child, tk.Entry):
                     try:
                         child.config(bg=t["ENTRY_BG"], fg=t["TEXT_LIGHT"], insertbackground=t["TEXT_LIGHT"],
                                      relief='flat', bd=0)
                     except Exception:
                         pass
-                # Listbox
+                #Listbox
                 if isinstance(child, tk.Listbox):
                     try:
                         child.config(bg=t["ENTRY_BG"], fg=t["TEXT_LIGHT"], bd=0, highlightthickness=0)
                     except Exception:
                         pass
-                # Canvas
+                #Canvas
                 if isinstance(child, tk.Canvas):
                     try:
                         child.config(bg=t["CARD_BG"], highlightthickness=0)
                     except Exception:
                         pass
-                # Scrollbar
+                #Scrollbar
                 if isinstance(child, tk.Scrollbar):
                     try:
                         child.config(bg=t["CARD_BG"], troughcolor=t["CARD_BG"])
                     except Exception:
                         pass
-                # ttk widgets: rely on ttk.Style settings already applied
-                # Recursively apply to children
+                #ttk widgets: rely on ttk.Style settings already applied
+                
                 self._apply_theme_recursive(child)
             except Exception:
-                # don't interrupt theming if a widget is unusual
+                
                 try:
                     self._apply_theme_recursive(child)
                 except Exception:
@@ -307,7 +305,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             self.frames[key] = frame
             frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        # populate each frame
+        #populate each frame
         self._populate_home()
         self._populate_instructions()
         self._populate_quiz_setup()
@@ -401,7 +399,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         except Exception:
             self.timer_seconds = 15
 
-        # reset quiz state
+        #reset quiz state
         self.score = 0
         self.question_index = 0
         self.questions_attempted = []
@@ -438,7 +436,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         return random.randint(min_v, max_v), random.randint(min_v, max_v)
 
     def _start_question(self):
-        # cancel any previous timer
+        
         if self.timer_after_id:
             try:
                 self.after_cancel(self.timer_after_id)
@@ -450,7 +448,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             self._end_quiz()
             return
 
-        # generate only addition/subtraction
+        
         n1, n2 = self._random_numbers()
         op = random.choice(['+', '-'])
         if op == '-' and n1 < n2:
@@ -459,7 +457,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         self.current_problem = (n1, n2, op)
         self.first_attempt = True
 
-        # ensure UI exists
+        #ensure UI exists
         if not hasattr(self, 'answer_entry') or not self.answer_entry.winfo_exists():
             self._populate_quiz()
 
@@ -468,7 +466,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         self.quiz_info_label.config(text=f"Profile: {self.current_profile or 'Guest'} — Difficulty: {self.difficulty}")
         self.progress_label.config(text=f"Question {self.question_index+1} / {QUESTIONS_PER_QUIZ}  |  Score: {self.score}")
 
-        # start timer
+        #start timer
         self.timer_remaining = self.timer_seconds
         self._tick_timer()
 
@@ -550,7 +548,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         perfect = all(attempt[3] for attempt in self.questions_attempted) if self.questions_attempted else False
         earned = self._evaluate_achievements(perfect, total_time, pct)
 
-        # save to leaderboard
+        #save to leaderboard
         rec = {'name': self.current_profile or 'Guest', 'score': self.score, 'difficulty': self.difficulty, 'time': time.strftime('%Y-%m-%d %H:%M:%S')}
         leaderboard.append(rec)
         leaderboard.sort(key=lambda r: (-r['score'], r['time']))
@@ -566,7 +564,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             profiles[self.current_profile] = p
             save_json_file(PROFILES_FILE, profiles)
 
-        # show results frame
+        
         self._populate_results(earned=earned, total_time=total_time)
         self.show_frame('results')
 
@@ -677,7 +675,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         tk.Button(f, text='Clear Leaderboard', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self._clear_leaderboard).pack(pady=6)
 
     def _toggle_dark(self):
-        # Keep logic same; only toggle visual bg across frames
+        
         self.dark_mode = not self.dark_mode
         bg = '#0f1724' if self.dark_mode else '#f3f4f6'
         for k, fr in self.frames.items():
@@ -714,7 +712,6 @@ class EnhancedMathsQuizApp(tk.Tk):
             return new
         return earned
 
-# ---------- Run ----------
 if __name__ == '__main__':
     app = EnhancedMathsQuizApp()
     app.mainloop()
