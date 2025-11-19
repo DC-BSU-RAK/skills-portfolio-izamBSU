@@ -1,7 +1,7 @@
 import os
 import json
 import random
-import tkinter as tk
+from tkinter import *
 from tkinter import ttk, messagebox, simpledialog, filedialog
 import time
 import platform
@@ -48,7 +48,7 @@ profiles = load_json_file(PROFILES_FILE, {})  # dict: username -> profile data
 #--- Sound helpers (safe) ---
 def _bell_if_possible():
     try:
-        root = tk._get_default_root()
+        root = Tk()
         if root:
             root.bell()
     except Exception:
@@ -79,7 +79,7 @@ else:
         _bell_if_possible()
 
 #--- App class ---
-class EnhancedMathsQuizApp(tk.Tk):
+class EnhancedMathsQuizApp(Tk):
     def __init__(self):
         super().__init__()
         self.title('Enhanced Maths Quiz Application')
@@ -148,7 +148,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             
             pass
 
-        #Root-level defaults for classic widgets (tk.Button, tk.Label, etc.)
+        #Root-level defaults for classic widgets (Button, Label, etc.)
         try:
             #Many widgets set their own bg explicitly; option_add helps default the rest
             self.option_add("*Background", MAIN_BG)
@@ -182,9 +182,9 @@ class EnhancedMathsQuizApp(tk.Tk):
         self.bg_image = None
 
         #UI layout
-        self.sidebar = tk.Frame(self, width=200, bg=SIDEBAR_BG)
+        self.sidebar = Frame(self, width=200, bg=SIDEBAR_BG)
         self.sidebar.pack(side='left', fill='y')
-        self.main_area = tk.Frame(self, bg=MAIN_BG)
+        self.main_area = Frame(self, bg=MAIN_BG)
         self.main_area.pack(side='right', fill='both', expand=True)
 
         #build UI
@@ -211,7 +211,7 @@ class EnhancedMathsQuizApp(tk.Tk):
             try:
                 cls = child.winfo_class()
                 #Frames
-                if isinstance(child, tk.Frame):
+                if isinstance(child, Frame):
             
                     if child is self.sidebar:
                         child.config(bg=t["SIDEBAR_BG"])
@@ -224,13 +224,13 @@ class EnhancedMathsQuizApp(tk.Tk):
                         except Exception:
                             pass
                 #Labels
-                if isinstance(child, tk.Label):
+                if isinstance(child, Label):
                     try:
                         child.config(bg=t["MAIN_BG"], fg=t["TEXT_LIGHT"])
                     except Exception:
                         pass
-                #Buttons (tk.Button)
-                if isinstance(child, tk.Button):
+                #Buttons (Button)
+                if isinstance(child, Button):
                     try:
                         child.config(bg=t["ACCENT"], fg=t["TEXT_LIGHT"], activebackground=t["ACCENT_HOVER"],
                                      relief='flat', bd=0, highlightthickness=0)
@@ -240,26 +240,26 @@ class EnhancedMathsQuizApp(tk.Tk):
                     except Exception:
                         pass
                 #Entries
-                if isinstance(child, tk.Entry):
+                if isinstance(child, Entry):
                     try:
                         child.config(bg=t["ENTRY_BG"], fg=t["TEXT_LIGHT"], insertbackground=t["TEXT_LIGHT"],
                                      relief='flat', bd=0)
                     except Exception:
                         pass
                 #Listbox
-                if isinstance(child, tk.Listbox):
+                if isinstance(child, Listbox):
                     try:
                         child.config(bg=t["ENTRY_BG"], fg=t["TEXT_LIGHT"], bd=0, highlightthickness=0)
                     except Exception:
                         pass
                 #Canvas
-                if isinstance(child, tk.Canvas):
+                if isinstance(child, Canvas):
                     try:
                         child.config(bg=t["CARD_BG"], highlightthickness=0)
                     except Exception:
                         pass
                 #Scrollbar
-                if isinstance(child, tk.Scrollbar):
+                if isinstance(child, Scrollbar):
                     try:
                         child.config(bg=t["CARD_BG"], troughcolor=t["CARD_BG"])
                     except Exception:
@@ -276,7 +276,7 @@ class EnhancedMathsQuizApp(tk.Tk):
 
     # ---------- UI: Sidebar ----------
     def _build_sidebar(self):
-        logo = tk.Label(self.sidebar, text='MathsQuiz', font=('Segoe UI', 18, 'bold'), bg='#0f1724', fg='#e6eef8')
+        logo = Label(self.sidebar, text='MathsQuiz', font=('Segoe UI', 18, 'bold'), bg='#0f1724', fg='#e6eef8')
         logo.pack(fill='x', pady=(12,8), padx=8)
 
         buttons = [
@@ -288,12 +288,12 @@ class EnhancedMathsQuizApp(tk.Tk):
             ('Settings', 'settings')
         ]
         for text, frame_key in buttons:
-            b = tk.Button(self.sidebar, text=text, font=('Segoe UI', 11), relief='flat',
+            b = Button(self.sidebar, text=text, font=('Segoe UI', 11), relief='flat',
                           bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"],
                           command=lambda k=frame_key: self.show_frame(k))
             b.pack(fill='x', padx=10, pady=6)
 
-        self.profile_label = tk.Label(self.sidebar, text='No profile', bg=self._THEME["SIDEBAR_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.profile_label = Label(self.sidebar, text='No profile', bg=self._THEME["SIDEBAR_BG"], fg=self._THEME["TEXT_LIGHT"])
         self.profile_label.pack(side='bottom', pady=12)
 
     # ---------- UI: Main frames ----------
@@ -301,7 +301,7 @@ class EnhancedMathsQuizApp(tk.Tk):
         self.frames = {}
         keys = ['home', 'instructions', 'quiz_setup', 'quiz', 'results', 'leaderboard', 'profiles', 'settings']
         for key in keys:
-            frame = tk.Frame(self.main_area, bg=self._THEME["MAIN_BG"])
+            frame = Frame(self.main_area, bg=self._THEME["MAIN_BG"])
             self.frames[key] = frame
             frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 
@@ -326,17 +326,17 @@ class EnhancedMathsQuizApp(tk.Tk):
         f = self.frames['home']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Welcome to MathsQuiz', font=('Segoe UI', 20, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=16)
-        tk.Button(f, text='Instructions', width=18, bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('instructions')).pack(pady=6)
-        tk.Button(f, text='Start New Quiz', width=18, bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('quiz_setup')).pack(pady=6)
-        tk.Button(f, text='View Leaderboard', width=18, bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('leaderboard')).pack(pady=6)
+        Label(f, text='Welcome to MathsQuiz', font=('Segoe UI', 20, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=16)
+        Button(f, text='Instructions', width=18, bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('instructions')).pack(pady=6)
+        Button(f, text='Start New Quiz', width=18, bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('quiz_setup')).pack(pady=6)
+        Button(f, text='View Leaderboard', width=18, bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('leaderboard')).pack(pady=6)
 
     # ---------- Instructions ----------
     def _populate_instructions(self):
         f = self.frames['instructions']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Instructions', font=('Segoe UI', 18, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=12)
+        Label(f, text='Instructions', font=('Segoe UI', 18, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=12)
         instructions_text = (
             "1. Select a profile (optional) or create new.\n"
             "2. Choose a difficulty level (Easy / Moderate / Advanced / Extreme).\n"
@@ -346,49 +346,57 @@ class EnhancedMathsQuizApp(tk.Tk):
             "6. Correct on first try: +10 points. Correct on second try: +5 points.\n"
             "7. View results, achievements and export a PDF report at the end."
         )
-        tk.Label(f, text=instructions_text, justify='left', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"], font=('Segoe UI', 12)).pack(padx=16, pady=8, anchor='w')
-        tk.Button(f, text='Back to Home', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=12)
+        Label(f, text=instructions_text, justify='left', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"], font=('Segoe UI', 12)).pack(padx=16, pady=8, anchor='w')
+        Button(f, text='Back to Home', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=12)
 
     # ---------- Quiz Setup ----------
     def _populate_quiz_setup(self):
         f = self.frames['quiz_setup']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Quiz Setup', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=12)
+        Label(f, text='Quiz Setup', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=12)
 
-        pf = tk.Frame(f, bg=self._THEME["MAIN_BG"])
+        pf = Frame(f, bg=self._THEME["MAIN_BG"])
         pf.pack(pady=8)
-        tk.Label(pf, text='Profile:', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=0, column=0, sticky='e')
+        Label(pf, text='Profile:', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=0, column=0, sticky='e')
+        
         profiles_list = list(profiles.keys())
+        # Set Combobox values
         self.profile_select = ttk.Combobox(pf, values=profiles_list if profiles_list else ['Anonymous'], state='normal')
         self.profile_select.grid(row=0, column=1, padx=8)
         if profiles_list:
             self.profile_select.set(profiles_list[0])
+        elif self.current_profile:
+             self.profile_select.set(self.current_profile)
 
-        tk.Button(pf, text='Manage Profiles', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('profiles')).grid(row=0, column=2, padx=6)
+        Button(pf, text='Manage Profiles', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('profiles')).grid(row=0, column=2, padx=6)
 
-        tk.Label(pf, text='Difficulty:', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=1, column=0, sticky='e', pady=8)
+        Label(pf, text='Difficulty:', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=1, column=0, sticky='e', pady=8)
         self.difficulty_combo = ttk.Combobox(pf, values=list(DIFFICULTY.keys()), state='readonly')
         self.difficulty_combo.set(self.difficulty)
         self.difficulty_combo.grid(row=1, column=1, padx=8)
 
-        tk.Label(pf, text='Time per question (s):', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=2, column=0, sticky='e')
-        self.time_spin = tk.Spinbox(pf, from_=5, to=60, width=5)
+        Label(pf, text='Time per question (s):', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=2, column=0, sticky='e')
+        self.time_spin = Spinbox(pf, from_=5, to=60, width=5)
         self.time_spin.delete(0, 'end')
         self.time_spin.insert(0, str(self.timer_seconds))
         self.time_spin.grid(row=2, column=1, sticky='w')
 
-        tk.Button(f, text='Begin Quiz', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.begin_quiz).pack(pady=12)
+        Button(f, text='Begin Quiz', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.begin_quiz).pack(pady=12)
 
     def begin_quiz(self):
         sel = self.profile_select.get().strip()
+        
         if sel and sel in profiles:
             self.current_profile = sel
         else:
-            if sel:
+            if sel and sel != 'Anonymous':
                 if sel not in profiles:
+                    # Create new profile implicitly
                     profiles[sel] = self._default_profile(sel)
                     save_json_file(PROFILES_FILE, profiles)
+                    # Refresh widgets immediately after creation
+                    self._refresh_profile_widgets() 
                 self.current_profile = sel
             else:
                 self.current_profile = None
@@ -412,23 +420,23 @@ class EnhancedMathsQuizApp(tk.Tk):
         f = self.frames['quiz']
         for w in f.winfo_children():
             w.destroy()
-        top = tk.Frame(f, bg=self._THEME["MAIN_BG"])
+        top = Frame(f, bg=self._THEME["MAIN_BG"])
         top.pack(fill='x', pady=6)
-        self.quiz_info_label = tk.Label(top, text='', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.quiz_info_label = Label(top, text='', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
         self.quiz_info_label.pack()
-        self.question_label = tk.Label(f, text='', font=('Segoe UI', 28, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.question_label = Label(f, text='', font=('Segoe UI', 28, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
         self.question_label.pack(pady=10)
-        self.answer_entry = tk.Entry(f, font=('Segoe UI', 18), justify='center', bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], insertbackground=self._THEME["TEXT_LIGHT"])
+        self.answer_entry = Entry(f, font=('Segoe UI', 18), justify='center', bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], insertbackground=self._THEME["TEXT_LIGHT"])
         self.answer_entry.pack()
-        btn_frame = tk.Frame(f, bg=self._THEME["MAIN_BG"])
+        btn_frame = Frame(f, bg=self._THEME["MAIN_BG"])
         btn_frame.pack(pady=10)
-        tk.Button(btn_frame, text='Submit', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.submit_answer).pack(side='left', padx=6)
-        tk.Button(btn_frame, text='Skip', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.skip_question).pack(side='left', padx=6)
-        bottom = tk.Frame(f, bg=self._THEME["MAIN_BG"])
+        Button(btn_frame, text='Submit', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.submit_answer).pack(side='left', padx=6)
+        Button(btn_frame, text='Skip', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.skip_question).pack(side='left', padx=6)
+        bottom = Frame(f, bg=self._THEME["MAIN_BG"])
         bottom.pack(side='bottom', fill='x', pady=8)
-        self.progress_label = tk.Label(bottom, text='', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.progress_label = Label(bottom, text='', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
         self.progress_label.pack()
-        self.timer_label = tk.Label(bottom, text='', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.timer_label = Label(bottom, text='', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
         self.timer_label.pack()
 
     def _random_numbers(self):
@@ -497,7 +505,9 @@ class EnhancedMathsQuizApp(tk.Tk):
             return
 
         correct = self._correct_answer()
-        time_taken = int(time.time() - self.quiz_start_time) if self.quiz_start_time else 0
+        # Calculate time taken for this *specific* question (using total time elapsed since quiz start is slightly confusing, 
+        # but maintaining original logic for now, though usually elapsed time per Q is calculated relative to Q start)
+        time_taken = int(time.time() - self.quiz_start_time) if self.quiz_start_time else 0 
 
         if user_ans == correct:
             points = 10 if self.first_attempt else 5
@@ -545,7 +555,11 @@ class EnhancedMathsQuizApp(tk.Tk):
 
         total_time = int(time.time() - self.quiz_start_time) if self.quiz_start_time else 0
         pct = (self.score / (QUESTIONS_PER_QUIZ * 10)) * 100 if QUESTIONS_PER_QUIZ > 0 else 0
+        
+        # Check if the quiz actually ran (avoid errors if quit early)
+        num_correct_first_try = sum(1 for q, u, c, b, t in self.questions_attempted if b and (u is not None) and (10 if self.first_attempt else 5) == 10)
         perfect = all(attempt[3] for attempt in self.questions_attempted) if self.questions_attempted else False
+        
         earned = self._evaluate_achievements(perfect, total_time, pct)
 
         #save to leaderboard
@@ -553,6 +567,10 @@ class EnhancedMathsQuizApp(tk.Tk):
         leaderboard.append(rec)
         leaderboard.sort(key=lambda r: (-r['score'], r['time']))
         save_json_file(LEADERBOARD_FILE, leaderboard)
+
+        # --- FIX: Repopulate the leaderboard display immediately after saving ---
+        self._populate_leaderboard()
+        # -------------------------------------------
 
         if self.current_profile:
             p = profiles.get(self.current_profile, self._default_profile(self.current_profile))
@@ -572,23 +590,23 @@ class EnhancedMathsQuizApp(tk.Tk):
         f = self.frames['results']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Quiz Results', font=('Segoe UI', 18, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
-        tk.Label(f, text=f'Score: {self.score} / {QUESTIONS_PER_QUIZ*10}', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack()
-        tk.Label(f, text=f'Time taken: {total_time} s', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack()
+        Label(f, text='Quiz Results', font=('Segoe UI', 18, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
+        Label(f, text=f'Score: {self.score} / {QUESTIONS_PER_QUIZ*10}', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack()
+        Label(f, text=f'Time taken: {total_time} s', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack()
 
         if earned:
-            tk.Label(f, text='Achievements Unlocked:', font=('Segoe UI', 12, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=6)
+            Label(f, text='Achievements Unlocked:', font=('Segoe UI', 12, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=6)
             for aid in earned:
                 a = next((x for x in ACHIEVEMENTS_DEF if x['id'] == aid), None)
                 if a:
-                    tk.Label(f, text=f"• {a['title']}: {a['desc']}", bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(anchor='w', padx=20)
+                    Label(f, text=f"• {a['title']}: {a['desc']}", bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(anchor='w', padx=20)
 
     # ---------- Leaderboard ----------
     def _populate_leaderboard(self):
         f = self.frames['leaderboard']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Leaderboard', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
+        Label(f, text='Leaderboard', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
         cols = ('Rank', 'Name', 'Score', 'Difficulty', 'When')
         tree = ttk.Treeview(f, columns=cols, show='headings')
         for c in cols:
@@ -597,27 +615,27 @@ class EnhancedMathsQuizApp(tk.Tk):
         tree.pack(fill='both', expand=True, padx=8, pady=8)
         for i, r in enumerate(leaderboard[:50], start=1):
             tree.insert('', 'end', values=(i, r.get('name'), r.get('score'), r.get('difficulty', '-'), r.get('time', '-')))
-        tk.Button(f, text='Back', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=6)
+        Button(f, text='Back', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=6)
 
     # ---------- Profiles ----------
     def _populate_profiles(self):
         f = self.frames['profiles']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Profiles', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
-        left = tk.Frame(f, bg=self._THEME["MAIN_BG"])
+        Label(f, text='Profiles', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
+        left = Frame(f, bg=self._THEME["MAIN_BG"])
         left.pack(side='left', fill='y', padx=12, pady=12)
-        right = tk.Frame(f, bg=self._THEME["MAIN_BG"])
+        right = Frame(f, bg=self._THEME["MAIN_BG"])
         right.pack(side='right', fill='both', expand=True, padx=12, pady=12)
 
-        self.profile_listbox = tk.Listbox(left, height=15, bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], bd=0, highlightthickness=0)
+        self.profile_listbox = Listbox(left, height=15, bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], bd=0, highlightthickness=0)
         self.profile_listbox.pack()
         for name in profiles.keys():
             self.profile_listbox.insert('end', name)
-        tk.Button(left, text='New Profile', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.create_profile).pack(pady=6)
-        tk.Button(left, text='Delete Profile', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.delete_profile).pack()
+        Button(left, text='New Profile', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.create_profile).pack(pady=6)
+        Button(left, text='Delete Profile', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.delete_profile).pack()
 
-        self.profile_detail = tk.Frame(right, bg='#0b1220', bd=1, relief='solid')
+        self.profile_detail = Frame(right, bg='#0b1220', bd=1, relief='solid')
         self.profile_detail.pack(fill='both', expand=True)
         self.profile_listbox.bind('<<ListboxSelect>>', self._on_profile_select)
 
@@ -629,9 +647,15 @@ class EnhancedMathsQuizApp(tk.Tk):
         if name in profiles:
             messagebox.showinfo('Exists', 'Profile already exists.')
             return
+        
         profiles[name] = self._default_profile(name)
         save_json_file(PROFILES_FILE, profiles)
+        
+        # Update widgets across all frames
+        self._refresh_profile_widgets()
+        # Redraw the Profiles screen
         self._populate_profiles()
+        self._render_profile_detail(name) # Show details of newly created profile
 
     def delete_profile(self):
         sel = self.profile_listbox.curselection()
@@ -639,9 +663,15 @@ class EnhancedMathsQuizApp(tk.Tk):
             return
         name = self.profile_listbox.get(sel[0])
         if messagebox.askyesno('Confirm', f'Delete profile {name}?'):
+            if name == self.current_profile:
+                self.current_profile = None 
+
             profiles.pop(name, None)
             save_json_file(PROFILES_FILE, profiles)
-            self._populate_profiles()
+            
+            # Update all profile-related widgets
+            self._refresh_profile_widgets() 
+            self._populate_profiles() # Redraw the profile list
 
     def _on_profile_select(self, event):
         sel = event.widget.curselection()
@@ -654,13 +684,13 @@ class EnhancedMathsQuizApp(tk.Tk):
         for w in self.profile_detail.winfo_children():
             w.destroy()
         p = profiles.get(name, self._default_profile(name))
-        tk.Label(self.profile_detail, text=name, font=('Segoe UI', 14, 'bold'), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
-        tk.Label(self.profile_detail, text=f"Last score: {p.get('last_score','-')}", bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack()
-        tk.Label(self.profile_detail, text='Achievements:', bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=6)
+        Label(self.profile_detail, text=name, font=('Segoe UI', 14, 'bold'), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
+        Label(self.profile_detail, text=f"Last score: {p.get('last_score','-')}", bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack()
+        Label(self.profile_detail, text='Achievements:', bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=6)
         for aid in p.get('achievements', []):
             a = next((x for x in ACHIEVEMENTS_DEF if x['id'] == aid), None)
             if a:
-                tk.Label(self.profile_detail, text=f"• {a['title']}", bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(anchor='w', padx=12)
+                Label(self.profile_detail, text=f"• {a['title']}", bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(anchor='w', padx=12)
 
     def _default_profile(self, name):
         return {'name': name, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'history': [], 'achievements': [], 'last_score': None}
@@ -670,9 +700,44 @@ class EnhancedMathsQuizApp(tk.Tk):
         f = self.frames['settings']
         for w in f.winfo_children():
             w.destroy()
-        tk.Label(f, text='Settings', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
-        tk.Button(f, text='Toggle Dark Mode', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self._toggle_dark).pack(pady=6)
-        tk.Button(f, text='Clear Leaderboard', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self._clear_leaderboard).pack(pady=6)
+        Label(f, text='Settings', font=('Segoe UI', 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=8)
+        Button(f, text='Toggle Dark Mode', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self._toggle_dark).pack(pady=6)
+        Button(f, text='Clear Leaderboard', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self._clear_leaderboard).pack(pady=6)
+
+    def _refresh_profile_widgets(self):
+        """Refreshes the profile list in the Quiz Setup Combobox and Profiles Listbox (if they exist)."""
+        profiles_list = list(profiles.keys())
+        
+        # 1. Update Quiz Setup Combobox
+        if hasattr(self, 'profile_select') and self.profile_select.winfo_exists():
+            # Temporarily allow writing new values
+            current_state = self.profile_select['state']
+            self.profile_select['state'] = 'normal'
+            
+            self.profile_select['values'] = profiles_list if profiles_list else ['Anonymous']
+            
+            # Restore state
+            if current_state == 'readonly':
+                 self.profile_select['state'] = 'readonly'
+            
+            # Ensure a relevant profile is selected in the combobox
+            if self.current_profile and self.current_profile in profiles_list:
+                self.profile_select.set(self.current_profile)
+            elif profiles_list:
+                self.profile_select.set(profiles_list[0])
+            else:
+                self.profile_select.set('Anonymous')
+
+        # 2. Update Profiles Listbox (if it exists)
+        if hasattr(self, 'profile_listbox') and self.profile_listbox.winfo_exists():
+            self.profile_listbox.delete(0, 'end')
+            for name in profiles_list:
+                self.profile_listbox.insert('end', name)
+
+            # Clear details pane if list is empty or current profile was deleted
+            if hasattr(self, 'profile_detail'):
+                for w in self.profile_detail.winfo_children():
+                    w.destroy()
 
     def _toggle_dark(self):
         
@@ -701,11 +766,20 @@ class EnhancedMathsQuizApp(tk.Tk):
             earned.append('brain_master')
         if perfect:
             earned.append('perfect_run')
-        first3 = self.questions_attempted[:3]
-        first3_score = sum(1 for a in first3 if a[3])
-        first3_pct = (first3_score / max(1, len(first3))) * 100
-        if first3_pct < 30 and pct >= 50:
-            earned.append('comeback')
+        
+        # Comeback logic: Score less than 30% on first 3 questions, but overall score >= 50%
+        if len(self.questions_attempted) >= 3:
+            # Score points only granted on correct first try (10 pts) or correct second try (5 pts)
+            initial_score_points = sum(
+                10 if a[3] and self.questions_attempted.index(a) < 1 else 5 if a[3] else 0 
+                for a in self.questions_attempted[:3] if a[3] is not None
+            )
+            # Max possible score in the first 3 questions is 30.
+            initial_pct = (initial_score_points / 30) * 100 if 30 > 0 else 0 
+            
+            if initial_pct < 30 and pct >= 50:
+                 earned.append('comeback')
+                 
         if self.current_profile:
             existing = set(profiles.get(self.current_profile, {}).get('achievements', []))
             new = [e for e in earned if e not in existing]

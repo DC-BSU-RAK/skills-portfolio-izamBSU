@@ -1,0 +1,32 @@
+[
+  {
+    "name": "dhoni",
+    "score": 100,
+    "difficulty": "Easy",
+    "time": "2025-11-19 13:00:36"
+  },
+  {
+    "name": "sundar",
+    "score": 100,
+    "difficulty": "Easy",
+    "time": "2025-11-19 13:22:21"
+  },
+  {
+    "name": "gill",
+    "score": 100,
+    "difficulty": "Easy",
+    "time": "2025-11-19 14:02:32"
+  },
+  {
+    "name": "ronaldo",
+    "score": 90,
+    "difficulty": "Easy",
+    "time": "2025-11-19 13:56:40"
+  },
+  {
+    "name": "dhoni",
+    "score": 30,
+    "difficulty": "Easy",
+    "time": "2025-11-19 12:59:05"
+  }
+]
