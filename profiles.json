@@ -61,5 +61,17 @@
       "perfect_run"
     ],
     "last_score": 100
+  },
+  "izam": {
+    "name": "izam",
+    "created": "2025-11-19 19:45:24",
+    "history": [
+      {
+        "score": 85,
+        "time": "2025-11-19 19:58:53"
+      }
+    ],
+    "achievements": [],
+    "last_score": 85
   }
 }
