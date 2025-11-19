@@ -344,7 +344,7 @@ class EnhancedMathsQuizApp(Tk):
             "4. Only addition and subtraction questions will appear.\n"
             "5. You have limited time per question; answer before timer ends.\n"
             "6. Correct on first try: +10 points. Correct on second try: +5 points.\n"
-            "7. View results, achievements and export a PDF report at the end."
+            "7. View results, achievements, and leaderboard after quiz.\n"
         )
         Label(f, text=instructions_text, justify='left', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"], font=('Segoe UI', 12)).pack(padx=16, pady=8, anchor='w')
         Button(f, text='Back to Home', bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=12)
