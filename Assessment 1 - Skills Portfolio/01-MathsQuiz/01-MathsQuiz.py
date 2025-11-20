@@ -6,7 +6,6 @@ from tkinter import ttk, messagebox, simpledialog, filedialog
 import time
 import platform
 
-
 #--- Configuration ---
 DIFFICULTY = {
     "Easy": (1, 9),
@@ -24,7 +23,22 @@ ACHIEVEMENTS_DEF = [
     {"id": "comeback", "title": "Comeback", "desc": "Get >=50% after initially falling below 30%"}
 ]
 
-#--- Utilities for storage ---
+# --- 1. SMART FONT SELECTION (Added for better visuals) ---
+SYS_OS = platform.system()
+if SYS_OS == "Darwin":  # macOS
+    MAIN_FONT = "Helvetica Neue"
+    MATH_FONT = "Menlo"
+    HEADER_WEIGHT = "bold"
+elif SYS_OS == "Windows": # Windows
+    MAIN_FONT = "Segoe UI"
+    MATH_FONT = "Consolas"
+    HEADER_WEIGHT = "bold"
+else: # Linux
+    MAIN_FONT = "Helvetica"
+    MATH_FONT = "Courier New" 
+    HEADER_WEIGHT = "bold"
+
+#--- Utilities for storage (KEPT ORIGINAL) ---
 def load_json_file(path, default):
     try:
         if not os.path.exists(path):
@@ -45,7 +59,7 @@ def save_json_file(path, data):
 leaderboard = load_json_file(LEADERBOARD_FILE, [])
 profiles = load_json_file(PROFILES_FILE, {})  # dict: username -> profile data
 
-#--- Sound helpers (safe) ---
+#--- Sound helpers (KEPT ORIGINAL) ---
 def _bell_if_possible():
     try:
         root = Tk()
@@ -84,7 +98,7 @@ class EnhancedMathsQuizApp(Tk):
     def __init__(self):
         super().__init__()
         self.title('Enhanced Maths Quiz Application')
-        # INCREASED SIZE
+        # INCREASED WINDOW SIZE
         self.geometry('1024x720')
         self.minsize(900, 600)
 
@@ -95,12 +109,16 @@ class EnhancedMathsQuizApp(Tk):
         PRIMARY_BG = "#0b1220"
         MAIN_BG = "#071025"
         SIDEBAR_BG = "#0f1724"
-        CARD_BG = "#0f172a"
+        CARD_BG = "#1e293b" # Updated to be slightly lighter for contrast
         TEXT_LIGHT = "#e6eef8"
         ACCENT = "#2b8ef6"
         ACCENT_HOVER = "#60a5fa"
         ENTRY_BG = "#071829"
         MUTED = "#93a4b8"
+        
+        # Added for Feedback
+        SUCCESS = "#22c55e"
+        ERROR = "#ef4444"
 
         self._THEME.update({
             "PRIMARY_BG": PRIMARY_BG,
@@ -111,17 +129,18 @@ class EnhancedMathsQuizApp(Tk):
             "ACCENT": ACCENT,
             "ACCENT_HOVER": ACCENT_HOVER,
             "ENTRY_BG": ENTRY_BG,
-            "MUTED": MUTED
+            "MUTED": MUTED,
+            "SUCCESS": SUCCESS,
+            "ERROR": ERROR
         })
 
-        # --- STYLE UPDATES FOR BIGGER TEXT ---
+        # --- STYLE UPDATES (Bigger Fonts) ---
         try:
             style = ttk.Style(self)
             style.theme_use("clam")
             
-            # Bigger Buttons
             style.configure("TButton",
-                            font=("Segoe UI", 12, "bold"),
+                            font=(MAIN_FONT, 12, "bold"),
                             padding=10,
                             foreground=TEXT_LIGHT,
                             background=ACCENT,
@@ -129,15 +148,13 @@ class EnhancedMathsQuizApp(Tk):
             style.map("TButton",
                       background=[("active", ACCENT_HOVER), ("!active", ACCENT)])
             
-            # Bigger Labels
             style.configure("TLabel",
                             background=MAIN_BG,
                             foreground=TEXT_LIGHT,
-                            font=("Segoe UI", 14))
+                            font=(MAIN_FONT, 14))
             
             style.configure("TFrame", background=MAIN_BG)
             
-            # Bigger Combobox
             style.configure("TCombobox",
                             fieldbackground=ENTRY_BG,
                             background=ENTRY_BG,
@@ -145,32 +162,38 @@ class EnhancedMathsQuizApp(Tk):
                             arrowsize=20,
                             padding=5)
             
-            # Bigger Treeview (Leaderboard)
             style.configure("Treeview",
                             background=ENTRY_BG,
                             foreground=TEXT_LIGHT,
                             fieldbackground=ENTRY_BG,
-                            font=("Segoe UI", 12),
-                            rowheight=35) # Taller rows
+                            font=(MAIN_FONT, 12),
+                            rowheight=40)
             
             style.configure("Treeview.Heading",
                             background=ACCENT,
                             foreground="white",
-                            font=("Segoe UI", 13, "bold"),
+                            font=(MAIN_FONT, 13, "bold"),
                             padding=10)
+            
+            # New Progress Bar Style
+            style.configure("Horizontal.TProgressbar",
+                            background=ACCENT,
+                            troughcolor=ENTRY_BG,
+                            bordercolor=ENTRY_BG,
+                            lightcolor=ACCENT,
+                            darkcolor=ACCENT)
                             
         except Exception:
             pass
 
-        # Root-level defaults for classic widgets
+        # Root-level defaults
         try:
             self.option_add("*Background", MAIN_BG)
             self.option_add("*Foreground", TEXT_LIGHT)
-            # Global bigger font
-            self.option_add("*Label.Font", ("Segoe UI", 14))
-            self.option_add("*Button.Font", ("Segoe UI", 12, "bold"))
-            self.option_add("*Entry.Font", ("Segoe UI", 14))
-            self.option_add("*Listbox.Font", ("Segoe UI", 14))
+            self.option_add("*Label.Font", (MAIN_FONT, 14))
+            self.option_add("*Button.Font", (MAIN_FONT, 12, "bold"))
+            self.option_add("*Entry.Font", (MAIN_FONT, 14))
+            self.option_add("*Listbox.Font", (MAIN_FONT, 14))
             self.option_add("*Button.Background", ACCENT)
             self.option_add("*Button.Foreground", TEXT_LIGHT)
             self.option_add("*TearOff", False)
@@ -191,7 +214,11 @@ class EnhancedMathsQuizApp(Tk):
         self.timer_after_id = None
         self.quiz_start_time = None
         self.questions_attempted = []
+        
+        # New state for UI flow (prevents double clicking while flashing)
+        self.is_processing_answer = False
 
+        # theme state
         self.dark_mode = True
         self.bg_image = None
 
@@ -201,6 +228,7 @@ class EnhancedMathsQuizApp(Tk):
         self.main_area = Frame(self, bg=MAIN_BG)
         self.main_area.pack(side='right', fill='both', expand=True)
 
+        # build UI
         self._build_sidebar()
         self._build_main_frames()
 
@@ -209,26 +237,33 @@ class EnhancedMathsQuizApp(Tk):
         except Exception:
             pass
 
+        # start on home
         self.show_frame('home')
 
-    
+    # (KEPT ORIGINAL)
     def _apply_theme_recursive(self, w):
         t = self._THEME
         for child in w.winfo_children():
             try:
+                cls = child.winfo_class()
                 if isinstance(child, Frame):
                     if child is self.sidebar:
                         child.config(bg=t["SIDEBAR_BG"])
                     elif child is self.main_area:
                         child.config(bg=t["MAIN_BG"])
                     else:
-                        try:
-                            child.config(bg=t["CARD_BG"])
-                        except Exception:
-                            pass
-                
-                # Style Buttons mostly handled by ttk or option_add, 
-                # but explicit config for hover effects on standard Buttons
+                        # We skip coloring Frames manually if they are the new "Card" frames
+                        # to avoid overriding the card color logic
+                        pass
+
+                if isinstance(child, Label):
+                    try:
+                        # Skip card labels so they can flash colors
+                        if "Card" not in str(child): 
+                            child.config(bg=t["MAIN_BG"], fg=t["TEXT_LIGHT"])
+                    except Exception:
+                        pass
+
                 if isinstance(child, Button):
                     try:
                         child.config(bg=t["ACCENT"], fg=t["TEXT_LIGHT"], activebackground=t["ACCENT_HOVER"],
@@ -237,29 +272,28 @@ class EnhancedMathsQuizApp(Tk):
                         child.bind("<Leave>", lambda e, c=t["ACCENT"]: e.widget.config(bg=c))
                     except Exception:
                         pass
-                
+
                 if isinstance(child, Entry):
                     try:
                         child.config(bg=t["ENTRY_BG"], fg=t["TEXT_LIGHT"], insertbackground=t["TEXT_LIGHT"],
                                      relief='flat', bd=0)
                     except Exception:
                         pass
-                
+
                 if isinstance(child, Listbox):
                     try:
                         child.config(bg=t["ENTRY_BG"], fg=t["TEXT_LIGHT"], bd=0, highlightthickness=0)
                     except Exception:
                         pass
-
+                
                 self._apply_theme_recursive(child)
             except Exception:
                 pass
 
     # ---------- UI: Sidebar ----------
     def _build_sidebar(self):
-        # Bigger Logo
-        logo = Label(self.sidebar, text='MathsQuiz', font=('Segoe UI', 26, 'bold'), bg='#0f1724', fg='#e6eef8')
-        logo.pack(fill='x', pady=(20, 20), padx=15)
+        logo = Label(self.sidebar, text='MathsQuiz', font=(MAIN_FONT, 28, 'bold'), bg='#0f1724', fg='#e6eef8')
+        logo.pack(fill='x', pady=(25, 20), padx=15)
 
         buttons = [
             ('Home', 'home'),
@@ -270,18 +304,15 @@ class EnhancedMathsQuizApp(Tk):
             ('Settings', 'settings')
         ]
         
-        # Spacer
         Frame(self.sidebar, bg='#0f1724', height=20).pack()
 
         for text, frame_key in buttons:
-            # Bigger sidebar buttons
-            b = Button(self.sidebar, text=text, font=('Segoe UI', 13), relief='flat',
+            b = Button(self.sidebar, text=text, font=(MAIN_FONT, 14), relief='flat',
                        bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"],
                        command=lambda k=frame_key: self.show_frame(k), height=2)
             b.pack(fill='x', padx=15, pady=8)
 
-        self.profile_label = Label(self.sidebar, text='No profile', font=('Segoe UI', 11), 
-                                   bg=self._THEME["SIDEBAR_BG"], fg=self._THEME["MUTED"])
+        self.profile_label = Label(self.sidebar, text='No profile', font=(MAIN_FONT, 11), bg=self._THEME["SIDEBAR_BG"], fg=self._THEME["MUTED"])
         self.profile_label.pack(side='bottom', pady=20)
 
     # ---------- UI: Main frames ----------
@@ -306,7 +337,7 @@ class EnhancedMathsQuizApp(Tk):
         if key not in self.frames:
             return
         
-        # --- FIX: Kill timer if navigating away from quiz ---
+        # Fix for timer running in background
         if key != 'quiz':
             if self.timer_after_id:
                 try:
@@ -314,7 +345,6 @@ class EnhancedMathsQuizApp(Tk):
                 except Exception:
                     pass
                 self.timer_after_id = None
-        # ---------------------------------------------------
 
         self.frames[key].lift()
         self.profile_label.config(text=f'User: {self.current_profile}' if self.current_profile else 'No profile')
@@ -325,16 +355,15 @@ class EnhancedMathsQuizApp(Tk):
         for w in f.winfo_children():
             w.destroy()
         
-        # Centering Container
         container = Frame(f, bg=self._THEME["MAIN_BG"])
         container.pack(expand=True)
 
-        Label(container, text='Welcome to MathsQuiz', font=('Segoe UI', 36, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=30)
+        Label(container, text='Welcome to MathsQuiz', font=(MAIN_FONT, 40, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=30)
         
         btn_width = 25
-        Button(container, text='Instructions', width=btn_width, font=('Segoe UI', 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('instructions')).pack(pady=10)
-        Button(container, text='Start New Quiz', width=btn_width, font=('Segoe UI', 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('quiz_setup')).pack(pady=10)
-        Button(container, text='View Leaderboard', width=btn_width, font=('Segoe UI', 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('leaderboard')).pack(pady=10)
+        Button(container, text='Instructions', width=btn_width, font=(MAIN_FONT, 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('instructions')).pack(pady=10)
+        Button(container, text='Start New Quiz', width=btn_width, font=(MAIN_FONT, 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('quiz_setup')).pack(pady=10)
+        Button(container, text='View Leaderboard', width=btn_width, font=(MAIN_FONT, 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('leaderboard')).pack(pady=10)
 
     # ---------- Instructions ----------
     def _populate_instructions(self):
@@ -345,7 +374,7 @@ class EnhancedMathsQuizApp(Tk):
         container = Frame(f, bg=self._THEME["MAIN_BG"])
         container.pack(expand=True, fill='both', padx=40, pady=40)
 
-        Label(container, text='Instructions', font=('Segoe UI', 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=(0, 20))
+        Label(container, text='Instructions', font=(MAIN_FONT, 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=(0, 20))
         
         instructions_text = (
             "1. Select a profile (optional) or create new.\n\n"
@@ -354,11 +383,11 @@ class EnhancedMathsQuizApp(Tk):
             "4. Only addition and subtraction questions will appear.\n\n"
             "5. You have limited time per question; answer before timer ends.\n\n"
             "6. Correct on first try: +10 points. Correct on second try: +5 points.\n\n"
-            "7. View results, achievements, and leaderboard after quiz.\n"
+            "7. Screen will flash GREEN for correct, RED for incorrect.\n"
         )
-        Label(container, text=instructions_text, justify='left', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"], font=('Segoe UI', 14)).pack(anchor='center')
+        Label(container, text=instructions_text, justify='left', bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"], font=(MAIN_FONT, 14)).pack(anchor='center')
         
-        Button(container, text='Back to Home', width=20, font=('Segoe UI', 12), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=30)
+        Button(container, text='Back to Home', width=20, font=(MAIN_FONT, 12), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('home')).pack(pady=30)
 
     # ---------- Quiz Setup ----------
     def _populate_quiz_setup(self):
@@ -369,16 +398,15 @@ class EnhancedMathsQuizApp(Tk):
         container = Frame(f, bg=self._THEME["MAIN_BG"])
         container.pack(expand=True)
 
-        Label(container, text='Quiz Setup', font=('Segoe UI', 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=30)
+        Label(container, text='Quiz Setup', font=(MAIN_FONT, 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=30)
 
         pf = Frame(container, bg=self._THEME["MAIN_BG"])
         pf.pack(pady=10)
         
-        # Profile
-        Label(pf, text='Profile:', font=('Segoe UI', 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=0, column=0, sticky='e', padx=10, pady=10)
+        Label(pf, text='Profile:', font=(MAIN_FONT, 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=0, column=0, sticky='e', padx=10, pady=10)
         
         profiles_list = list(profiles.keys())
-        self.profile_select = ttk.Combobox(pf, values=profiles_list if profiles_list else ['Anonymous'], state='normal', font=('Segoe UI', 14), width=20)
+        self.profile_select = ttk.Combobox(pf, values=profiles_list if profiles_list else ['Anonymous'], state='normal', font=(MAIN_FONT, 14), width=20)
         self.profile_select.grid(row=0, column=1, padx=10, pady=10)
         
         if profiles_list:
@@ -386,22 +414,20 @@ class EnhancedMathsQuizApp(Tk):
         elif self.current_profile:
              self.profile_select.set(self.current_profile)
 
-        Button(pf, text='Manage', font=('Segoe UI', 10), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('profiles')).grid(row=0, column=2, padx=10)
+        Button(pf, text='Manage', font=(MAIN_FONT, 10), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=lambda: self.show_frame('profiles')).grid(row=0, column=2, padx=10)
 
-        # Difficulty
-        Label(pf, text='Difficulty:', font=('Segoe UI', 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=1, column=0, sticky='e', padx=10, pady=10)
-        self.difficulty_combo = ttk.Combobox(pf, values=list(DIFFICULTY.keys()), state='readonly', font=('Segoe UI', 14), width=20)
+        Label(pf, text='Difficulty:', font=(MAIN_FONT, 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=1, column=0, sticky='e', padx=10, pady=10)
+        self.difficulty_combo = ttk.Combobox(pf, values=list(DIFFICULTY.keys()), state='readonly', font=(MAIN_FONT, 14), width=20)
         self.difficulty_combo.set(self.difficulty)
         self.difficulty_combo.grid(row=1, column=1, padx=10, pady=10)
 
-        # Time
-        Label(pf, text='Time per question (s):', font=('Segoe UI', 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=2, column=0, sticky='e', padx=10, pady=10)
-        self.time_spin = Spinbox(pf, from_=5, to=60, width=5, font=('Segoe UI', 14))
+        Label(pf, text='Time per question (s):', font=(MAIN_FONT, 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).grid(row=2, column=0, sticky='e', padx=10, pady=10)
+        self.time_spin = Spinbox(pf, from_=5, to=60, width=5, font=(MAIN_FONT, 14))
         self.time_spin.delete(0, 'end')
         self.time_spin.insert(0, str(self.timer_seconds))
         self.time_spin.grid(row=2, column=1, sticky='w', padx=10, pady=10)
 
-        Button(container, text='Begin Quiz', width=20, font=('Segoe UI', 16, 'bold'), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.begin_quiz).pack(pady=40)
+        Button(container, text='Begin Quiz', width=20, font=(MAIN_FONT, 16, 'bold'), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.begin_quiz).pack(pady=40)
 
     def begin_quiz(self):
         sel = self.profile_select.get().strip()
@@ -431,7 +457,7 @@ class EnhancedMathsQuizApp(Tk):
         self.show_frame('quiz')
         self._start_question()
 
-    # ---------- Quiz screen ----------
+    # ---------- Quiz screen (VISUAL UPGRADE) ----------
     def _populate_quiz(self):
         f = self.frames['quiz']
         for w in f.winfo_children():
@@ -439,40 +465,47 @@ class EnhancedMathsQuizApp(Tk):
             
         # Top info bar
         top = Frame(f, bg=self._THEME["MAIN_BG"])
-        top.pack(fill='x', pady=15, padx=20)
+        top.pack(fill='x', pady=15, padx=30)
         
-        self.quiz_info_label = Label(top, text='', font=('Segoe UI', 14), bg=self._THEME["MAIN_BG"], fg=self._THEME["MUTED"])
-        self.quiz_info_label.pack(side='right')
-        
-        self.progress_label = Label(top, text='', font=('Segoe UI', 14, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["ACCENT"])
+        self.progress_label = Label(top, text='', font=(MAIN_FONT, 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["ACCENT"])
         self.progress_label.pack(side='left')
 
-        # Center Content
-        center = Frame(f, bg=self._THEME["MAIN_BG"])
-        center.pack(expand=True)
+        self.score_label = Label(top, text='Score: 0', font=(MAIN_FONT, 16, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["SUCCESS"])
+        self.score_label.pack(side='right')
+
+        # --- CARD CONTAINER ---
+        self.card = Frame(f, bg=self._THEME["CARD_BG"], bd=2, relief="flat")
+        self.card.pack(expand=True, fill='both', padx=50, pady=20)
+
+        # Feedback Label (Shows "CORRECT!" or "WRONG!" inside the card)
+        self.feedback_label = Label(self.card, text='', font=(MAIN_FONT, 24, 'bold'), bg=self._THEME["CARD_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.feedback_label.pack(pady=(30, 10))
 
         # HUGE Question
-        self.question_label = Label(center, text='', font=('Segoe UI', 64, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"])
-        self.question_label.pack(pady=(20, 40))
+        self.question_label = Label(self.card, text='', font=(MATH_FONT, 72, 'bold'), bg=self._THEME["CARD_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.question_label.pack(pady=10)
         
         # Big Answer Box
-        self.answer_entry = Entry(center, font=('Segoe UI', 32), width=10, justify='center', 
+        self.answer_entry = Entry(self.card, font=(MATH_FONT, 40), width=8, justify='center', 
                                   bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], 
-                                  insertbackground=self._THEME["TEXT_LIGHT"])
-        self.answer_entry.pack(pady=(0, 30), ipady=10)
+                                  insertbackground=self._THEME["TEXT_LIGHT"], relief='flat')
+        self.answer_entry.pack(pady=30, ipady=10)
+        self.answer_entry.bind('<Return>', lambda event: self.submit_answer()) # Keyboard shortcut
         
         # Buttons
-        btn_frame = Frame(center, bg=self._THEME["MAIN_BG"])
+        btn_frame = Frame(self.card, bg=self._THEME["CARD_BG"])
         btn_frame.pack(pady=20)
-        Button(btn_frame, text='Submit Answer', width=15, font=('Segoe UI', 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.submit_answer).pack(side='left', padx=15)
-        Button(btn_frame, text='Skip', width=10, font=('Segoe UI', 14), bg="#475569", fg=self._THEME["TEXT_LIGHT"], command=self.skip_question).pack(side='left', padx=15)
+        Button(btn_frame, text='Submit Answer', width=15, font=(MAIN_FONT, 14), bg=self._THEME["ACCENT"], fg=self._THEME["TEXT_LIGHT"], command=self.submit_answer).pack(side='left', padx=15)
+        Button(btn_frame, text='Skip', width=10, font=(MAIN_FONT, 14), bg="#475569", fg=self._THEME["TEXT_LIGHT"], command=self.skip_question).pack(side='left', padx=15)
 
-        # Timer at bottom
+        # Bottom Timer Bar
         bottom = Frame(f, bg=self._THEME["MAIN_BG"])
-        bottom.pack(side='bottom', fill='x', pady=30)
+        bottom.pack(side='bottom', fill='x', padx=50, pady=30)
         
-        self.timer_label = Label(bottom, text='', font=('Segoe UI', 18, 'bold'), bg=self._THEME["MAIN_BG"], fg="#ef4444")
-        self.timer_label.pack()
+        Label(bottom, text="Time Remaining:", font=(MAIN_FONT, 12), bg=self._THEME["MAIN_BG"], fg=self._THEME["MUTED"]).pack(anchor='w')
+        
+        self.time_progress = ttk.Progressbar(bottom, orient='horizontal', mode='determinate', style="Horizontal.TProgressbar")
+        self.time_progress.pack(fill='x', pady=5)
 
     def _random_numbers(self):
         min_v, max_v = DIFFICULTY.get(self.difficulty, (1, 99))
@@ -490,6 +523,7 @@ class EnhancedMathsQuizApp(Tk):
             self._end_quiz()
             return
 
+        self.is_processing_answer = False
         n1, n2 = self._random_numbers()
         op = random.choice(['+', '-'])
         if op == '-' and n1 < n2:
@@ -501,28 +535,35 @@ class EnhancedMathsQuizApp(Tk):
         if not hasattr(self, 'answer_entry') or not self.answer_entry.winfo_exists():
             self._populate_quiz()
 
+        # Reset Visuals for next question
+        self.card.config(bg=self._THEME["CARD_BG"])
+        self.question_label.config(text=f"{n1} {op} {n2} = ?", bg=self._THEME["CARD_BG"], fg=self._THEME["TEXT_LIGHT"])
+        self.feedback_label.config(text="", bg=self._THEME["CARD_BG"])
         self.answer_entry.delete(0, 'end')
-        self.question_label.config(text=f"{n1} {op} {n2} = ?")
-        self.quiz_info_label.config(text=f"Diff: {self.difficulty}  |  User: {self.current_profile or 'Guest'}")
-        self.progress_label.config(text=f"Q: {self.question_index+1}/{QUESTIONS_PER_QUIZ}   Score: {self.score}")
-        
-        # Focus entry
+        self.answer_entry.config(state='normal')
         self.answer_entry.focus_set()
 
+        self.progress_label.config(text=f"Question {self.question_index+1} / {QUESTIONS_PER_QUIZ}")
+        self.score_label.config(text=f"Score: {self.score}")
+        
+        # Reset Timer Bar
         self.timer_remaining = self.timer_seconds
+        self.time_progress['maximum'] = self.timer_seconds * 10 
+        self.time_progress['value'] = self.timer_seconds * 10
+        
         self._tick_timer()
 
     def _tick_timer(self):
-        self.timer_label.config(text=f"Time left: {self.timer_remaining}s")
+        # Update Bar
+        self.time_progress['value'] = self.timer_remaining * 10
+        
         if self.timer_remaining <= 0:
-            play_sound_wrong()
-            messagebox.showinfo('Time up', 'Time is up for this question.')
-            self._record_attempt(user_ans=None, time_taken=self.timer_seconds)
-            self.question_index += 1
-            self._start_question()
+            self._handle_feedback(False, "TIME UP!", is_timeout=True)
             return
-        self.timer_remaining -= 1
-        self.timer_after_id = self.after(1000, self._tick_timer)
+        
+        # Update every 0.1s for smoothness
+        self.timer_remaining -= 0.1
+        self.timer_after_id = self.after(100, self._tick_timer)
 
     def _correct_answer(self):
         if not self.current_problem:
@@ -531,11 +572,14 @@ class EnhancedMathsQuizApp(Tk):
         return n1 + n2 if op == '+' else n1 - n2
 
     def submit_answer(self):
+        if self.is_processing_answer: 
+            return # Prevent double clicks
+            
         entry = self.answer_entry.get().strip()
         try:
             user_ans = int(entry)
         except Exception:
-            messagebox.showinfo('Invalid', 'Please enter an integer answer.')
+            self.feedback_label.config(text="Numbers only!", fg=self._THEME["MUTED"])
             return
 
         correct = self._correct_answer()
@@ -545,29 +589,50 @@ class EnhancedMathsQuizApp(Tk):
             points = 10 if self.first_attempt else 5
             self.score += points
             play_sound_correct()
-            # Removed annoying popup for every correct answer to speed up flow, 
-            # or keep it if preferred. Kept it as per original logic but maybe could be improved.
-            messagebox.showinfo('Correct', f'Correct! +{points} points')
             self._record_attempt(user_ans, time_taken)
-            self.question_index += 1
-            self._start_question()
+            self._handle_feedback(True, "CORRECT!")
         else:
+            play_sound_wrong()
             if self.first_attempt:
                 self.first_attempt = False
-                play_sound_wrong()
-                messagebox.showinfo('Incorrect', 'Incorrect — try again (fewer points if correct).')
+                # Show red text but don't move on yet
+                self.feedback_label.config(text="Try Again", fg=self._THEME["ERROR"])
                 self.answer_entry.delete(0, 'end')
             else:
-                play_sound_wrong()
-                messagebox.showinfo('Incorrect', 'Incorrect — moving on.')
                 self._record_attempt(user_ans, time_taken)
-                self.question_index += 1
-                self._start_question()
+                self._handle_feedback(False, f"WRONG! ({correct})")
 
-    def skip_question(self):
-        self._record_attempt(user_ans=None, time_taken=None)
+    # --- NEW FEEDBACK SYSTEM (Replaces messagebox) ---
+    def _handle_feedback(self, is_correct, text, is_timeout=False):
+        self.is_processing_answer = True
+        
+        if self.timer_after_id:
+            try:
+                self.after_cancel(self.timer_after_id)
+            except: pass
+        
+        color = self._THEME["SUCCESS"] if is_correct else self._THEME["ERROR"]
+        
+        # FLASH CARD
+        self.card.config(bg=color)
+        self.question_label.config(bg=color, fg="white")
+        self.feedback_label.config(text=text, bg=color, fg="white")
+        
+        if is_timeout:
+            play_sound_wrong()
+            self._record_attempt(None, self.timer_seconds)
+
+        # Wait 1.2 seconds then move to next question
+        self.after(1200, self._next_step)
+
+    def _next_step(self):
         self.question_index += 1
         self._start_question()
+
+    def skip_question(self):
+        if self.is_processing_answer: return
+        self._record_attempt(user_ans=None, time_taken=0)
+        self._handle_feedback(False, "SKIPPED")
 
     def _record_attempt(self, user_ans, time_taken):
         if not self.current_problem:
@@ -623,18 +688,18 @@ class EnhancedMathsQuizApp(Tk):
         container = Frame(f, bg=self._THEME["MAIN_BG"])
         container.pack(expand=True)
 
-        Label(container, text='Quiz Complete', font=('Segoe UI', 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=20)
-        Label(container, text=f'Final Score: {self.score} / {QUESTIONS_PER_QUIZ*10}', font=('Segoe UI', 24, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["ACCENT"]).pack(pady=10)
-        Label(container, text=f'Total Time: {total_time} seconds', font=('Segoe UI', 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["MUTED"]).pack(pady=10)
+        Label(container, text='Quiz Complete', font=(MAIN_FONT, 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=20)
+        Label(container, text=f'Final Score: {self.score} / {QUESTIONS_PER_QUIZ*10}', font=(MAIN_FONT, 24, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["ACCENT"]).pack(pady=10)
+        Label(container, text=f'Total Time: {total_time} seconds', font=(MAIN_FONT, 16), bg=self._THEME["MAIN_BG"], fg=self._THEME["MUTED"]).pack(pady=10)
 
         if earned:
-            Label(container, text='Achievements Unlocked!', font=('Segoe UI', 18, 'bold'), bg=self._THEME["MAIN_BG"], fg="#fbbf24").pack(pady=(20, 10))
+            Label(container, text='Achievements Unlocked!', font=(MAIN_FONT, 18, 'bold'), bg=self._THEME["MAIN_BG"], fg="#fbbf24").pack(pady=(20, 10))
             for aid in earned:
                 a = next((x for x in ACHIEVEMENTS_DEF if x['id'] == aid), None)
                 if a:
-                    Label(container, text=f"• {a['title']}: {a['desc']}", font=('Segoe UI', 14), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(anchor='center', pady=2)
+                    Label(container, text=f"• {a['title']}: {a['desc']}", font=(MAIN_FONT, 14), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(anchor='center', pady=2)
         
-        Button(container, text='Home', width=20, font=('Segoe UI', 14), command=lambda: self.show_frame('home')).pack(pady=40)
+        Button(container, text='Home', width=20, font=(MAIN_FONT, 14), command=lambda: self.show_frame('home')).pack(pady=40)
 
     # ---------- Leaderboard ----------
     def _populate_leaderboard(self):
@@ -642,10 +707,9 @@ class EnhancedMathsQuizApp(Tk):
         for w in f.winfo_children():
             w.destroy()
         
-        Label(f, text='Leaderboard', font=('Segoe UI', 28, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=20)
+        Label(f, text='Leaderboard', font=(MAIN_FONT, 28, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=20)
         
         cols = ('Rank', 'Name', 'Score', 'Difficulty', 'When')
-        # Treeview style already increased in __init__
         tree = ttk.Treeview(f, columns=cols, show='headings')
         
         for c in cols:
@@ -657,7 +721,7 @@ class EnhancedMathsQuizApp(Tk):
         for i, r in enumerate(leaderboard[:50], start=1):
             tree.insert('', 'end', values=(i, r.get('name'), r.get('score'), r.get('difficulty', '-'), r.get('time', '-')))
             
-        Button(f, text='Back', width=15, font=('Segoe UI', 12), command=lambda: self.show_frame('home')).pack(pady=20)
+        Button(f, text='Back', width=15, font=(MAIN_FONT, 12), command=lambda: self.show_frame('home')).pack(pady=20)
 
     # ---------- Profiles ----------
     def _populate_profiles(self):
@@ -665,7 +729,7 @@ class EnhancedMathsQuizApp(Tk):
         for w in f.winfo_children():
             w.destroy()
         
-        Label(f, text='Profiles', font=('Segoe UI', 28, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=20)
+        Label(f, text='Profiles', font=(MAIN_FONT, 28, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=20)
         
         content = Frame(f, bg=self._THEME["MAIN_BG"])
         content.pack(fill='both', expand=True, padx=40, pady=10)
@@ -676,7 +740,7 @@ class EnhancedMathsQuizApp(Tk):
         right = Frame(content, bg=self._THEME["MAIN_BG"])
         right.pack(side='right', fill='both', expand=True)
 
-        self.profile_listbox = Listbox(left, height=15, width=25, bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], bd=0, highlightthickness=0, font=('Segoe UI', 14))
+        self.profile_listbox = Listbox(left, height=15, width=25, bg=self._THEME["ENTRY_BG"], fg=self._THEME["TEXT_LIGHT"], bd=0, highlightthickness=0, font=(MAIN_FONT, 14))
         self.profile_listbox.pack(fill='y', expand=True)
         
         for name in profiles.keys():
@@ -738,19 +802,19 @@ class EnhancedMathsQuizApp(Tk):
         d_con = Frame(self.profile_detail, bg='#0b1220')
         d_con.pack(padx=30, pady=30, fill='both')
 
-        Label(d_con, text=name, font=('Segoe UI', 28, 'bold'), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=10, anchor='w')
-        Label(d_con, text=f"Created: {p.get('created', '-')}", font=('Segoe UI', 14), bg='#0b1220', fg=self._THEME["MUTED"]).pack(anchor='w')
-        Label(d_con, text=f"Last score: {p.get('last_score','-')}", font=('Segoe UI', 16), bg='#0b1220', fg=self._THEME["ACCENT"]).pack(pady=10, anchor='w')
+        Label(d_con, text=name, font=(MAIN_FONT, 28, 'bold'), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=10, anchor='w')
+        Label(d_con, text=f"Created: {p.get('created', '-')}", font=(MAIN_FONT, 14), bg='#0b1220', fg=self._THEME["MUTED"]).pack(anchor='w')
+        Label(d_con, text=f"Last score: {p.get('last_score','-')}", font=(MAIN_FONT, 16), bg='#0b1220', fg=self._THEME["ACCENT"]).pack(pady=10, anchor='w')
         
-        Label(d_con, text='Achievements:', font=('Segoe UI', 18, 'bold'), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=(20, 10), anchor='w')
+        Label(d_con, text='Achievements:', font=(MAIN_FONT, 18, 'bold'), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(pady=(20, 10), anchor='w')
         
         if not p.get('achievements'):
-            Label(d_con, text='None yet', font=('Segoe UI', 14), bg='#0b1220', fg=self._THEME["MUTED"]).pack(anchor='w')
+            Label(d_con, text='None yet', font=(MAIN_FONT, 14), bg='#0b1220', fg=self._THEME["MUTED"]).pack(anchor='w')
         
         for aid in p.get('achievements', []):
             a = next((x for x in ACHIEVEMENTS_DEF if x['id'] == aid), None)
             if a:
-                Label(d_con, text=f"• {a['title']}", font=('Segoe UI', 14), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(anchor='w', padx=10)
+                Label(d_con, text=f"• {a['title']}", font=(MAIN_FONT, 14), bg='#0b1220', fg=self._THEME["TEXT_LIGHT"]).pack(anchor='w', padx=10)
 
     def _default_profile(self, name):
         return {'name': name, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'history': [], 'achievements': [], 'last_score': None}
@@ -761,12 +825,12 @@ class EnhancedMathsQuizApp(Tk):
         for w in f.winfo_children():
             w.destroy()
         
-        Label(f, text='Settings', font=('Segoe UI', 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=30)
+        Label(f, text='Settings', font=(MAIN_FONT, 32, 'bold'), bg=self._THEME["MAIN_BG"], fg=self._THEME["TEXT_LIGHT"]).pack(pady=30)
         
-        Button(f, text='Toggle Dark/Light Mode', width=25, font=('Segoe UI', 14), command=self._toggle_dark).pack(pady=15)
-        Button(f, text='Clear Leaderboard Data', width=25, font=('Segoe UI', 14), command=self._clear_leaderboard).pack(pady=15)
+        Button(f, text='Toggle Dark/Light Mode', width=25, font=(MAIN_FONT, 14), command=self._toggle_dark).pack(pady=15)
+        Button(f, text='Clear Leaderboard Data', width=25, font=(MAIN_FONT, 14), command=self._clear_leaderboard).pack(pady=15)
         
-        Button(f, text='Back', width=15, font=('Segoe UI', 12), command=lambda: self.show_frame('home')).pack(pady=40)
+        Button(f, text='Back', width=15, font=(MAIN_FONT, 12), command=lambda: self.show_frame('home')).pack(pady=40)
 
     def _refresh_profile_widgets(self):
         profiles_list = list(profiles.keys())
