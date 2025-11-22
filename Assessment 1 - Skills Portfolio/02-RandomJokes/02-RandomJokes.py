@@ -3,15 +3,16 @@ from tkinter import messagebox
 import random
 import os
 import threading
+import time
 
-#Sound setup
+#Sound
 try:
     import winsound
     SOUND_AVAILABLE = True
 except ImportError:
     SOUND_AVAILABLE = False
 
-#Themes
+#Theme configurations
 THEMES = {
     "light": {
         "bg": "#2d3436",
@@ -41,32 +42,37 @@ BTN_WARNING = "#6c5ce7"
 class JokeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Alexa Joke App")
-        self.root.geometry("500x750")
+        self.root.title("Alexa Joke app 🤖")
+        #REDUCED HEIGHT TO FIT SCREEN
+        self.root.geometry("500x700") 
         
         self.jokes_list = []
         self.current_setup = ""
         self.current_punchline = ""
         self.using_backup = False
         self.is_dark_mode = True  #Start in dark mode
+        
+        #ANIMATION VARIABLES
+        self.emoji_frames = [] 
+        self.anim_id = None    
 
         self.load_data()
         self.load_background()
-
+        
         #UI Setup
         self.current_theme = THEMES["dark"]
         self.root.configure(bg=self.current_theme["bg"])
 
         #Main Card
         self.card = Frame(root, bg=self.current_theme["card"], bd=0)
-        self.card.place(relx=0.5, rely=0.5, anchor="center", width=440, height=680)
+        self.card.place(relx=0.5, rely=0.5, anchor="center", width=440, height=660)
 
         #Header
-        self.header_frame = Frame(self.card, bg=COLOR_HEADER, height=80)
+        self.header_frame = Frame(self.card, bg=COLOR_HEADER, height=70) #Slightly shorter header
         self.header_frame.pack(fill="x")
         self.header_frame.pack_propagate(False)
 
-        self.lbl_title = Label(self.header_frame, text="🤖 ALEXA JOKES", font=("Segoe UI", 16, "bold"), bg=COLOR_HEADER, fg="white")
+        self.lbl_title = Label(self.header_frame, text="🤖 ALEXA JOKES", font=("Segoe UI", 14, "bold"), bg=COLOR_HEADER, fg="white")
         self.lbl_title.pack(side="left", padx=20)
 
         #Dark Mode Toggle
@@ -80,24 +86,24 @@ class JokeApp:
         instruction_text = (
             "HOW TO USE:\n"
             "1. Click 'Alexa, tell me a joke'\n"
-            "2. Read the setup question\n"
-            "3. Click 'Show Punchline'\n"
-            "4. Use icons below to Copy or Save\n"
-            "5. Click ☀️/🌙 to toggle Theme"
+            "2. Read setup ->\n"
+            "3. Show Punchline\n"
+            "4. Copy/Save -> \n"
+            "5. ☀️/🌙 Toggle Theme\n"
         )
         
         self.lbl_instructions = Label(
             self.card, 
             text=instruction_text, 
-            font=("Segoe UI", 9), 
+            font=("Segoe UI", 8), #Slightly smaller font to save space
             justify="left", 
             bg=self.current_theme["instr_bg"], 
             fg=self.current_theme["text"], 
-            padx=15, 
-            pady=10, 
+            padx=10, 
+            pady=5, 
             width=50
         )
-        self.lbl_instructions.pack(pady=15, padx=20)
+        self.lbl_instructions.pack(pady=10, padx=20)
 
         self.lbl_status = Label(self.card, text=status_text, font=("Segoe UI", 8, "italic"), bg=self.current_theme["card"], fg="#b2bec3")
         self.lbl_status.pack(pady=(0, 5))
@@ -105,15 +111,18 @@ class JokeApp:
         self.divider = Frame(self.card, height=1, bg="#b2bec3")
         self.divider.pack(fill="x", padx=30)
 
-        #Content 
+        # Content Area
         self.content_frame = Frame(self.card, bg=self.current_theme["card"])
         self.content_frame.pack(expand=True, fill="both", padx=20, pady=5)
 
-        self.lbl_setup = Label(self.content_frame, text="Welcome!\nTurn up your volume 🔊", font=("Segoe UI", 14, "bold"), bg=self.current_theme["card"], fg=self.current_theme["text"], wraplength=380, justify="center")
-        self.lbl_setup.pack(pady=(20, 10))
+        self.lbl_setup = Label(self.content_frame, text="Welcome!\nTurn up your volume 🔊", font=("Segoe UI", 13, "bold"), bg=self.current_theme["card"], fg=self.current_theme["text"], wraplength=380, justify="center")
+        self.lbl_setup.pack(pady=(10, 5))
 
-        self.lbl_punchline = Label(self.content_frame, text="", font=("Segoe UI", 13, "italic"), bg=self.current_theme["card"], fg=COLOR_ACCENT, wraplength=380, justify="center")
+        self.lbl_punchline = Label(self.content_frame, text="", font=("Segoe UI", 12, "italic"), bg=self.current_theme["card"], fg=COLOR_ACCENT, wraplength=380, justify="center")
         self.lbl_punchline.pack(pady=5)
+        
+        #EMOJI LABEL
+        self.lbl_emoji = Label(self.content_frame, bg=self.current_theme["card"])
 
         #Tools
         self.tools_frame = Frame(self.card, bg=self.current_theme["card"])
@@ -127,9 +136,9 @@ class JokeApp:
 
         #Controls
         self.controls_frame = Frame(self.card, bg=self.current_theme["card"])
-        self.controls_frame.pack(side=BOTTOM, fill="x", pady=20, padx=30)
+        self.controls_frame.pack(side=BOTTOM, fill="x", pady=15, padx=30)
 
-        btn_font = ("Segoe UI", 11, "bold")
+        btn_font = ("Segoe UI", 10, "bold")
 
         self.btn_alexa = Button(self.controls_frame, text="🗣️  Alexa, tell me a joke", command=self.get_joke, bg=BTN_PRIMARY, fg="white", font=btn_font, relief="flat", height=2)
         self.btn_alexa.pack(fill="x")
@@ -138,8 +147,50 @@ class JokeApp:
         
         self.btn_next = Button(self.controls_frame, text="➡️  Next Joke", command=self.get_joke, bg=BTN_WARNING, fg="white", font=btn_font, relief="flat", height=2)
 
+        #Quit Button
         self.btn_quit = Button(self.card, text="❌ Quit", command=root.destroy, bg=self.current_theme["card"], fg="#b2bec3", relief="flat", bd=0)
-        self.btn_quit.place(relx=0.5, rely=0.98, anchor="center")
+        self.btn_quit.place(relx=0.5, rely=0.97, anchor="center") #Adjusted rely to be visible
+        
+        
+        self.load_gif()
+
+    def load_gif(self):
+        """Loads the specific uploaded GIF and splits it into frames"""
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            img_path = os.path.join(script_dir, "c:\\Users\\Le\\Downloads\\ezgif.com-webp-to-gif-converter.gif") 
+            
+            if not os.path.exists(img_path):
+                img_path = os.path.join(script_dir, "c:\\Users\\Le\\Downloads\\ezgif.com-webp-to-gif-converter.gif")
+
+            i = 0
+            while True:
+                try:
+                    #Load frame 'i'
+                    frame = PhotoImage(file=img_path, format=f"gif -index {i}")
+                    self.emoji_frames.append(frame)
+                    i += 1
+                except:
+                    break #Stop when out of frames
+            print(f"Loaded {len(self.emoji_frames)} frames for animation.")
+        except Exception as e:
+            print(f"Could not load gif: {e}")
+
+    def start_animation(self, frame_index=0):
+        """Loops through the frames"""
+        if not self.emoji_frames: return
+
+        self.lbl_emoji.configure(image=self.emoji_frames[frame_index])
+        next_index = (frame_index + 1) % len(self.emoji_frames)
+        self.anim_id = self.root.after(50, self.start_animation, next_index)
+
+    def stop_animation(self):
+        """Stops animation and hides label"""
+        if self.anim_id:
+            self.root.after_cancel(self.anim_id)
+            self.anim_id = None
+        self.lbl_emoji.pack_forget()
 
     def toggle_theme(self):
         #Switch mode
@@ -147,23 +198,18 @@ class JokeApp:
         mode = "dark" if self.is_dark_mode else "light"
         colors = THEMES[mode]
         
-        #Update Button Icon
         self.btn_theme.config(text="☀️" if self.is_dark_mode else "🌙")
-
-        #Apply colors
         self.root.configure(bg=colors["bg"])
         self.card.configure(bg=colors["card"])
         self.lbl_instructions.configure(bg=colors["instr_bg"], fg=colors["text"])
         self.lbl_status.configure(bg=colors["card"])
-        
         self.content_frame.configure(bg=colors["card"])
         self.lbl_setup.configure(bg=colors["card"], fg=colors["text"])
         self.lbl_punchline.configure(bg=colors["card"])
-        
+        self.lbl_emoji.configure(bg=colors["card"]) #Ensure emoji label matches card bg
         self.tools_frame.configure(bg=colors["card"])
         self.btn_copy.configure(bg=colors["btn_tool_bg"], fg=colors["btn_tool_text"])
         self.btn_fav.configure(bg=colors["btn_tool_bg"])
-        
         self.controls_frame.configure(bg=colors["card"])
         self.btn_quit.configure(bg=colors["card"])
 
@@ -182,7 +228,6 @@ class JokeApp:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(script_dir, "randomJokes.txt")
         success = False
-
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 self.parse_jokes(file)
@@ -213,20 +258,25 @@ class JokeApp:
                 if len(parts) == 2:
                     self.jokes_list.append((parts[0] + "?", parts[1]))
 
-    #Sound Logic
     def play_start_sound(self):
         if SOUND_AVAILABLE:
             def run():
                 winsound.Beep(440, 100); winsound.Beep(554, 100); winsound.Beep(659, 150)
             threading.Thread(target=run, daemon=True).start()
 
-    def play_tada_sound(self):
+    def play_laugh_sound(self):
         if SOUND_AVAILABLE:
             def run():
-                winsound.Beep(523, 80); winsound.Beep(659, 80); winsound.Beep(784, 80); winsound.Beep(1046, 200)
+                try:
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    sound_path = os.path.join(script_dir, "c:\\Users\\Le\\Downloads\\laugh.wav.wav")
+                    if not os.path.exists(sound_path):
+                         sound_path = os.path.join(script_dir, "c:\\Users\\Le\\Downloads\\laugh.wav.wav")
+                    winsound.PlaySound(sound_path, winsound.SND_FILENAME)
+                except Exception as e:
+                    print(f"Could not play sound: {e}")
             threading.Thread(target=run, daemon=True).start()
 
-    #Features
     def copy_to_clipboard(self):
         if self.current_setup:
             self.root.clipboard_clear()
@@ -242,9 +292,11 @@ class JokeApp:
             except Exception as e:
                 messagebox.showerror("Error", str(e))
 
-    #Main Flow
     def get_joke(self):
         if not self.jokes_list: return
+        
+        self.stop_animation() #Stop any ongoing animation
+        
         self.current_setup, self.current_punchline = random.choice(self.jokes_list)
         self.lbl_setup.config(text=self.current_setup)
         self.lbl_punchline.config(text="") 
@@ -255,7 +307,12 @@ class JokeApp:
 
     def show_punchline(self):
         self.lbl_punchline.config(text=self.current_punchline)
-        self.play_tada_sound()
+        self.play_laugh_sound()
+        
+        #Show emoji and animate
+        self.lbl_emoji.pack(pady=5) #Reduced padding
+        self.start_animation()
+        
         self.btn_show_punch.pack_forget()
         self.btn_next.pack(fill="x")
 
