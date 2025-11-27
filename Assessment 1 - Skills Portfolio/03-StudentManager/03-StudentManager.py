@@ -3,28 +3,27 @@ from tkinter import ttk, messagebox, simpledialog
 import os
 import sys
 
-# Color Palette
+#--- PALETTE (PREMIUM DARK THEME) ---
 COLORS = {
-    'sidebar_bg': '#0f172a',
-    'sidebar_hover': '#1e293b',
-    'accent': '#38bdf8',
-    'bg_fallback': '#f1f5f9',
-    'card_bg': '#1e293b',
-    'text_light': '#f8fafc',
-    'text_sub': '#94a3b8',
-    'grade_A': '#34d399',
-    'grade_B': '#38bdf8',
-    'grade_C': '#fbbf24',
-    'grade_D': '#94a3b8',
-    'grade_F': '#f87171',
-    'input_bg': '#334155'  # New color for input fields
+    'sidebar_bg': '#0f172a',      #Deep Navy
+    'sidebar_hover': '#1e293b',   #Lighter Navy
+    'accent': '#38bdf8',          #Neon Sky Blue
+    'bg_fallback': '#f1f5f9',     #Light Grey Background
+    'card_bg': '#1e293b',         #Dark Card Background
+    'input_bg': '#334155',        #Input Field Background
+    'text_light': '#f8fafc',      #White Text
+    'text_sub': '#94a3b8',        #Grey Text
+    'grade_A': '#34d399',         #Emerald
+    'grade_B': '#38bdf8',         #Blue
+    'grade_C': '#fbbf24',         #Amber
+    'grade_D': '#94a3b8',         #Grey
+    'grade_F': '#f87171',         #Red
 }
 
 FONTS = {
     'logo': ("Verdana", 19, "bold"),
     'nav': ("Segoe UI", 10),
     'h1': ("Segoe UI", 22, "bold"),
-    'card_title': ("Segoe UI", 9, "bold"),
     'card_val': ("Segoe UI", 24, "bold"),
     'table_head': ("Segoe UI", 10, "bold"),
     'table_body': ("Segoe UI", 10)
@@ -33,10 +32,11 @@ FONTS = {
 class StudentManagerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("UniManage | Enterprise Edition")
+        self.root.title("Student Manager | Enterprise Edition")
         self.root.geometry("1280x800")
         self.root.configure(bg=COLORS['bg_fallback'])
 
+        #Path Setup
         if getattr(sys, 'frozen', False):
             self.app_path = os.path.dirname(sys.executable)
         elif __file__:
@@ -56,6 +56,7 @@ class StudentManagerApp:
         style = ttk.Style()
         style.theme_use('clam')
         
+        #Table Styles (Dark Mode)
         style.configure("Treeview", 
                         background=COLORS['card_bg'],
                         foreground=COLORS['text_light'],
@@ -77,18 +78,18 @@ class StudentManagerApp:
         style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})]) 
 
     def create_interface(self):
-        # Sidebar
+        #--- Sidebar ---
         self.sidebar = Frame(self.root, bg=COLORS['sidebar_bg'], width=260)
         self.sidebar.pack(side=LEFT, fill=Y)
         self.sidebar.pack_propagate(False)
 
-        # Logo
+        #Logo
         logo_frame = Frame(self.sidebar, bg=COLORS['sidebar_bg'], pady=40, padx=30)
         logo_frame.pack(fill=X)
         Label(logo_frame, text="UniManage", font=FONTS['logo'], fg="white", bg=COLORS['sidebar_bg'], anchor="w").pack(fill=X)
         Label(logo_frame, text="Enterprise System", font=("Segoe UI", 9), fg="#94a3b8", bg=COLORS['sidebar_bg'], anchor="w").pack(fill=X)
 
-        # Navigation
+        #Navigation
         self.nav_frame = Frame(self.sidebar, bg=COLORS['sidebar_bg'])
         self.nav_frame.pack(fill=BOTH, expand=True, pady=20)
 
@@ -106,10 +107,11 @@ class StudentManagerApp:
         self.add_nav_item("Update", self.update_student_window, icon="✏️")
         self.add_nav_item("Delete", self.delete_student, icon="🗑️")
 
-        # Main Canvas area
+        #--- Main Area ---
         self.canvas = Canvas(self.root, bg=COLORS['bg_fallback'], highlightthickness=0)
         self.canvas.pack(side=RIGHT, fill=BOTH, expand=True)
 
+        #Background Image
         bg_path = os.path.join(self.app_path, "c:\\Users\\Le\\OneDrive\\Documents\\CODELAB-2\\Blue Gradient Flow.png")
         if os.path.exists(bg_path):
             try:
@@ -117,7 +119,9 @@ class StudentManagerApp:
                 self.canvas.create_image(0, 0, image=self.bg_photo, anchor="nw")
             except: pass 
 
-        # Search Bar
+        #--- Floating Elements ---
+        
+        #1. Search Bar
         search_vis = Frame(self.canvas, bg=COLORS['card_bg'], padx=10, pady=2) 
         Label(search_vis, text="🔍", fg=COLORS['text_sub'], bg=COLORS['card_bg'], font=("Segoe UI", 10)).pack(side=LEFT)
         self.search_entry = Entry(search_vis, bg=COLORS['card_bg'], bd=0, fg=COLORS['text_light'], insertbackground="white", font=("Segoe UI", 9))
@@ -128,7 +132,7 @@ class StudentManagerApp:
         self.search_entry.bind("<Return>", self.run_quick_search)
         self.win_search = self.canvas.create_window(950, 20, window=search_vis, anchor="ne", width=220, height=35)
 
-        # Stat Cards
+        #2. Stat Cards
         self.card1 = self.create_modern_card("Total Students", "👤", "0", COLORS['accent'])
         self.canvas.create_window(40, 65, window=self.card1, anchor="nw", width=280, height=100)
 
@@ -138,9 +142,8 @@ class StudentManagerApp:
         self.card3 = self.create_modern_card("Top Grade", "🏆", "-", COLORS['grade_C']) 
         self.canvas.create_window(660, 65, window=self.card3, anchor="nw", width=280, height=100)
 
-        # Main Table Container
+        #3. Table
         self.table_frame = Frame(self.canvas, bg=COLORS['card_bg'], padx=20, pady=20)
-        
         Label(self.table_frame, text="Dashboard Overview", font=("Segoe UI", 14, "bold"), bg=COLORS['card_bg'], fg=COLORS['text_light']).pack(anchor="w", pady=(0, 15))
 
         columns = ("code", "name", "cw_total", "exam", "percent", "grade")
@@ -157,6 +160,7 @@ class StudentManagerApp:
             self.tree.heading(col, text=text, anchor="w")
             self.tree.column(col, width=width, anchor="w")
 
+        #Grade Color Tags
         self.tree.tag_configure('grade_A', foreground=COLORS['grade_A'], font=("Segoe UI", 10, "bold"))
         self.tree.tag_configure('grade_B', foreground=COLORS['grade_B'], font=("Segoe UI", 10, "bold"))
         self.tree.tag_configure('grade_C', foreground=COLORS['grade_C'], font=("Segoe UI", 10, "bold"))
@@ -169,13 +173,11 @@ class StudentManagerApp:
 
     def create_modern_card(self, title, icon, value, accent_color):
         card = Frame(self.canvas, bg=COLORS['card_bg'])
-        
         strip = Frame(card, bg=accent_color, width=6)
         strip.pack(side=LEFT, fill=Y)
-        
         content_f = Frame(card, bg=COLORS['card_bg'], padx=15, pady=15)
         content_f.pack(side=LEFT, fill=BOTH, expand=True)
-
+        
         icon_f = Frame(content_f, bg=accent_color, width=45, height=45)
         icon_f.pack(side=LEFT, padx=(0, 15))
         icon_f.pack_propagate(False)
@@ -183,7 +185,6 @@ class StudentManagerApp:
         
         txt_f = Frame(content_f, bg=COLORS['card_bg'])
         txt_f.pack(side=LEFT, fill=Y, expand=True)
-        
         Label(txt_f, text=title, font=COLORS['text_sub'], fg=COLORS['text_sub'], bg=COLORS['card_bg']).pack(anchor="w")
         val_lbl = Label(txt_f, text=value, font=FONTS['card_val'], fg=COLORS['text_light'], bg=COLORS['card_bg'])
         val_lbl.pack(anchor="w")
@@ -191,7 +192,6 @@ class StudentManagerApp:
         if title == "Total Students": self.lbl_total = val_lbl
         if title == "Class Average": self.lbl_avg = val_lbl
         if title == "Top Grade": self.lbl_top = val_lbl
-        
         return card
 
     def add_nav_item(self, text, command=None, icon="", is_header=False):
@@ -206,6 +206,7 @@ class StudentManagerApp:
             btn.bind("<Enter>", lambda e: btn.config(bg=COLORS['sidebar_hover'], fg="white"))
             btn.bind("<Leave>", lambda e: btn.config(bg=COLORS['sidebar_bg'], fg="#cbd5e1"))
 
+    #--- Search ---
     def _on_search_focus_in(self, event):
         if self.search_entry.get() == "Search...":
             self.search_entry.delete(0, END)
@@ -220,19 +221,23 @@ class StudentManagerApp:
         q = self.search_entry.get()
         if q and q != "Search...":
             res = [s for s in self.students if q.lower() in s['name'].lower() or q in str(s['code'])]
-            if res: 
-                self.refresh_tree(res)
-            else: 
-                messagebox.showinfo("Search Info", "No matches found.")
+            if res: self.refresh_tree(res)
+            else: messagebox.showinfo("Search Info", "No matches found.")
         else:
             self.refresh_tree() 
 
     def on_resize(self, event):
         w = event.width
+        h = event.height
         if w > 600:
-            self.canvas.itemconfigure(self.win_table, width=w - 80)
+            
+            new_height = h - 190 - 20
+            if new_height < 200: new_height = 200 #Minimum height
+            
+            self.canvas.itemconfigure(self.win_table, width=w - 80, height=new_height)
             self.canvas.coords(self.win_search, w - 30, 20)
 
+    #--- Data Logic ---
     def calculate_results(self, cw1, cw2, cw3, exam):
         total_score = cw1 + cw2 + cw3 + exam
         percent = (total_score / 160) * 100
@@ -248,7 +253,6 @@ class StudentManagerApp:
         if not os.path.exists(self.filename):
             try: open(self.filename, 'w').write("0\n")
             except: pass
-            
         try:
             with open(self.filename, 'r') as f:
                 lines = f.readlines()
@@ -262,8 +266,7 @@ class StudentManagerApp:
                         c1, c2, c3, ex = int(p[2]), int(p[3]), int(p[4]), int(p[5])
                         perc, gr, cwt = self.calculate_results(c1, c2, c3, ex)
                         self.students.append({'code': code, 'name': name, 'cw1': c1, 'cw2': c2, 'cw3': c3, 'exam': ex, 'cw_total': cwt, 'percent': perc, 'grade': gr})
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+        except Exception as e: messagebox.showerror("Error", str(e))
 
     def save_data(self):
         try:
@@ -274,9 +277,11 @@ class StudentManagerApp:
         except: pass
 
     def refresh_tree(self, data=None):
+        #Clear existing
         for i in self.tree.get_children(): self.tree.delete(i)
         d = data if data else self.students
         
+        #Populate
         total_p = 0
         grades = []
         for s in d:
@@ -288,26 +293,32 @@ class StudentManagerApp:
         count = len(d)
         avg = round(total_p/count, 2) if count > 0 else 0
         
+        #Update Cards
         self.lbl_total.config(text=str(count))
         self.lbl_avg.config(text=f"{avg}%")
         self.lbl_top.config(text=min(grades) if grades else "-")
+        
+        #Force UI Update
+        self.root.update_idletasks()
 
-    def view_all_records(self): self.refresh_tree()
+    #--- Actions ---
+    def view_all_records(self):
+        #Reset search bar and view all
+        self.search_entry.delete(0, END)
+        self.search_entry.insert(0, "Search...")
+        self.search_entry.config(fg=COLORS['text_sub'])
+        self.refresh_tree()
     
     def find_student(self):
-        # Custom Dark Theme Find Dialog
         win = Toplevel(self.root)
         win.title("Find Student")
         win.geometry("400x200")
         win.configure(bg=COLORS['card_bg'])
-        
         Label(win, text="Search Student", font=("Segoe UI", 12, "bold"), bg=COLORS['card_bg'], fg=COLORS['text_light']).pack(pady=(20,10))
         Label(win, text="Enter Name or ID:", font=("Segoe UI", 10), bg=COLORS['card_bg'], fg=COLORS['text_sub']).pack(pady=(0,5))
-        
         e = Entry(win, font=("Segoe UI", 11), bg=COLORS['input_bg'], fg="white", insertbackground="white", relief="flat", bd=5)
         e.pack(fill=X, padx=40, pady=5)
         e.focus()
-        
         def do_search():
             q = e.get()
             win.destroy()
@@ -315,11 +326,7 @@ class StudentManagerApp:
                 res = [s for s in self.students if q.lower() in s['name'].lower() or q in str(s['code'])]
                 if res: self.refresh_tree(res)
                 else: messagebox.showinfo("Info", "No matches found.")
-
-        btn_f = Frame(win, bg=COLORS['card_bg'])
-        btn_f.pack(pady=20)
-        Button(btn_f, text="Cancel", command=win.destroy, bg=COLORS['sidebar_bg'], fg="white", bd=0, padx=10).pack(side=LEFT, padx=5)
-        Button(btn_f, text="Search", command=do_search, bg=COLORS['accent'], fg="white", bd=0, padx=10).pack(side=LEFT, padx=5)
+        Button(win, text="Search", command=do_search, bg=COLORS['accent'], fg="white", bd=0, padx=20, pady=5).pack(pady=20)
         win.bind('<Return>', lambda e: do_search())
 
     def show_highest(self):
@@ -329,23 +336,18 @@ class StudentManagerApp:
         if self.students: self.refresh_tree([min(self.students, key=lambda x: x['percent'])])
 
     def sort_menu(self):
-        # Custom Dark Theme Sort Dialog
         top = Toplevel(self.root)
-        top.title("Sort Records")
+        top.title("Sort")
         top.geometry("300x250")
         top.configure(bg=COLORS['card_bg'])
-        
         Label(top, text="Sort By", font=("Segoe UI", 14, "bold"), bg=COLORS['card_bg'], fg=COLORS['text_light']).pack(pady=(20,10))
-        
         def s(k, r):
             self.students.sort(key=lambda x: x[k], reverse=r)
             self.view_all_records()
             top.destroy()
-            
         def mk_btn(txt, cmd):
             Button(top, text=txt, command=cmd, font=("Segoe UI", 10), bg=COLORS['input_bg'], fg="white", 
                    activebackground=COLORS['accent'], activeforeground="white", bd=0, pady=8, cursor="hand2").pack(fill=X, padx=30, pady=5)
-
         mk_btn("Highest Percentage ⬇️", lambda: s('percent', True))
         mk_btn("Lowest Percentage ⬆️", lambda: s('percent', False))
         mk_btn("Name (A-Z)", lambda: s('name', False))
@@ -371,39 +373,17 @@ class StudentManagerApp:
     def form(self, title, stu=None):
         win = Toplevel(self.root)
         win.title(title)
-        win.geometry("450x600")
+        win.geometry("450x700") 
         win.configure(bg=COLORS['card_bg'])
         
-        Label(win, text=title, font=("Segoe UI", 16, "bold"), bg=COLORS['card_bg'], fg=COLORS['text_light']).pack(pady=(25, 20))
+        #1. Title (Top)
+        Label(win, text=title, font=("Segoe UI", 16, "bold"), bg=COLORS['card_bg'], fg=COLORS['text_light']).pack(pady=(20, 10))
         
-        form_frame = Frame(win, bg=COLORS['card_bg'])
-        form_frame.pack(fill=BOTH, expand=True, padx=40)
+        #2. Buttons (Bottom)
+        btn_frame = Frame(win, bg=COLORS['card_bg'])
+        btn_frame.pack(side=BOTTOM, fill=X, pady=20, padx=40)
         
         ents = {}
-        fields = [
-            ("Student ID", 'code'), 
-            ("Full Name", 'name'), 
-            ("Coursework 1 (0-20)", 'cw1'), 
-            ("Coursework 2 (0-20)", 'cw2'), 
-            ("Coursework 3 (0-20)", 'cw3'), 
-            ("Final Exam (0-100)", 'exam')
-        ]
-        
-        for i, (label_text, key) in enumerate(fields):
-            row = Frame(form_frame, bg=COLORS['card_bg'])
-            row.pack(fill=X, pady=6)
-            
-            Label(row, text=label_text, font=("Segoe UI", 10), bg=COLORS['card_bg'], fg=COLORS['text_sub'], anchor="w").pack(fill=X)
-            
-            # Use specific dark input background
-            e = Entry(row, font=("Segoe UI", 11), bg=COLORS['input_bg'], fg="white", insertbackground="white", relief="flat", bd=5)
-            e.pack(fill=X, ipady=3)
-            ents[key] = e
-            
-            if stu:
-                e.insert(0, str(stu[key]))
-                if key == 'code': 
-                    e.config(state='disabled', disabledbackground=COLORS['sidebar_bg'], disabledforeground=COLORS['text_sub'])
         
         def save():
             try:
@@ -423,13 +403,47 @@ class StudentManagerApp:
                 self.save_data()
                 self.view_all_records()
                 win.destroy()
+                
+                # Auto-Scroll to bottom to show new student
+                if not stu and self.students: 
+                    # Get the last item in the tree (which is the new student)
+                    children = self.tree.get_children()
+                    if children:
+                        last_item = children[-1]
+                        self.tree.selection_set(last_item)
+                        self.tree.focus(last_item)
+                        self.tree.see(last_item) # Scroll to ensure visibility
+                    
             except Exception as e: messagebox.showerror("Error", str(e))
-
-        btn_frame = Frame(win, bg=COLORS['card_bg'])
-        btn_frame.pack(fill=X, pady=30, padx=40)
-        
+            
         Button(btn_frame, text="Cancel", command=win.destroy, font=("Segoe UI", 10), bg=COLORS['sidebar_bg'], fg="white", bd=0, padx=20, pady=10, cursor="hand2").pack(side=LEFT)
-        Button(btn_frame, text="Save Record", command=save, font=("Segoe UI", 10, "bold"), bg=COLORS['accent'], fg="white", bd=0, padx=20, pady=10, cursor="hand2").pack(side=RIGHT)
+        Button(btn_frame, text="Submit", command=save, font=("Segoe UI", 10, "bold"), bg=COLORS['accent'], fg="white", bd=0, padx=20, pady=10, cursor="hand2").pack(side=RIGHT)
+
+        #3. Form Content
+        form_frame = Frame(win, bg=COLORS['card_bg'])
+        form_frame.pack(side=TOP, fill=BOTH, expand=True, padx=40)
+        
+        def create_entry(lbl, key):
+            f = Frame(form_frame, bg=COLORS['card_bg'])
+            f.pack(fill=X, pady=4)
+            Label(f, text=lbl, font=("Segoe UI", 10), bg=COLORS['card_bg'], fg=COLORS['text_sub'], anchor="w").pack(fill=X)
+            e = Entry(f, font=("Segoe UI", 11), bg=COLORS['input_bg'], fg="white", insertbackground="white", relief="flat", bd=5)
+            e.pack(fill=X, ipady=3)
+            ents[key] = e
+            if stu:
+                e.insert(0, str(stu[key]))
+                if key == 'code': e.config(state='disabled')
+
+        create_entry("Student ID", 'code')
+        create_entry("Full Name", 'name')
+        
+        Frame(form_frame, bg=COLORS['sidebar_bg'], height=2).pack(fill=X, pady=10)
+        Label(form_frame, text="Academic Performance", font=("Segoe UI", 9, "bold"), bg=COLORS['card_bg'], fg=COLORS['accent']).pack(anchor="w")
+
+        create_entry("Coursework 1 (0-20)", 'cw1')
+        create_entry("Coursework 2 (0-20)", 'cw2')
+        create_entry("Coursework 3 (0-20)", 'cw3')
+        create_entry("Final Exam (0-100)", 'exam')
 
 if __name__ == "__main__":
     root = Tk()
