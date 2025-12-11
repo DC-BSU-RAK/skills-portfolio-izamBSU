@@ -112,12 +112,14 @@ class StudentManagerApp:
         self.canvas.pack(side=RIGHT, fill=BOTH, expand=True)
 
         #Background Image
-        bg_path = os.path.join(self.app_path, "c:\\Users\\Le\\OneDrive\\Documents\\CODELAB-2\\Blue Gradient Flow.png")
+       
+        bg_path = os.path.join(self.app_path, "image", "blue gradient flow.png")
+        
         if os.path.exists(bg_path):
             try:
                 self.bg_photo = PhotoImage(file=bg_path)
                 self.canvas.create_image(0, 0, image=self.bg_photo, anchor="nw")
-            except: pass 
+            except: pass
 
         #--- Floating Elements ---
         
